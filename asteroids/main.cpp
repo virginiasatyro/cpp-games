@@ -32,16 +32,24 @@ private:
         float dx; // speed direction
         float dy;
         int size; // of asteroids
+        float angle;
     };
 
     std::vector<spaceObject> vecAsteroids; // collect the different objects in vectors
-    
+    spaceObject spaceship;
 
 public:
     // called once at the start, so create things here
     bool OnUserCreate() override
     {
-        vecAsteroids.push_back({20.0f, 20.0f, 8.0f, -6.0f, (int)16});
+        vecAsteroids.push_back({20.0f, 20.0f, 8.0f, -6.0f, (int)16, 0.0f});
+
+        // initialize spaceship position
+        spaceship.x = ScreenWidth() / 2.0f;
+        spaceship.y = ScreenHeight() / 2.0f;
+        spaceship.dx = 0.0f;
+        spaceship.dy = 0.0f;
+        spaceship.angle = 0.0f;
         return true;
     }
 
@@ -53,18 +61,69 @@ public:
         // set the background color
         Clear(olc::BLACK);
 
-        // update and draw asteroids
-        for (auto &a : vecAsteroids)
+        // steer
+        if(GetKey(olc::Key::LEFT).bHeld)
         {
-            a.x += a.dx * fElapsedTime; // fElapsedTime - time between frames
-            a.y += a.dy * fElapsedTime;
-            wrapCoordinates(a.x, a.y, a.x, a.y);
+            spaceship.angle -= 5.0f * fElapsedTime;
+        }
+        if(GetKey(olc::Key::RIGHT).bHeld)
+        {
+            spaceship.angle += 5.0f * fElapsedTime;
+        }
+
+        // thrust
+        if(GetKey(olc::Key::UP).bHeld)
+        {
+            // acceleration changes velocity (with respect to time)
+            spaceship.dx += sin(spaceship.angle) * 20.0f * fElapsedTime;
+            spaceship.dy += -cos(spaceship.angle) * 20.0f * fElapsedTime;
+        }
+
+        // velocity changes position (with respect to time)
+        spaceship.x += spaceship.dx * fElapsedTime;
+        spaceship.y += spaceship.dy * fElapsedTime;
+
+        wrapCoordinates(spaceship.x, spaceship.y, spaceship.x, spaceship.y);
+
+        // draw spaceship
+        float mx[3] = {0.0f, -2.5f, +2.5f}; // spaceship model vertices
+        float my[3] = {-5.5f, +2.5f, +2.5f};
+
+        float sx[3], sy[3];
+
+        // rotate
+        for (int i = 0; i < 3; i++)
+        {
+            sx[i] = mx[i] * cosf(spaceship.angle) - my[i] * sinf(spaceship.angle);
+            sy[i] = mx[i] * sinf(spaceship.angle) + my[i] * cosf(spaceship.angle);
+        }
+
+        // translate
+        for(int i = 0; i < 3; i++)
+        {
+            sx[i] = sx[i] + spaceship.x;
+            sy[i] = sy[i] + spaceship.y;
+        }
+
+        // draw closed polygon
+        for (int i = 0; i < 4; i++)
+        {
+            int j = i + 1;
+            DrawLine(sx[i % 3], sy[i % 3], sx[j % 3], sy[j % 3]); // module - to make sure all 3 lines are draw
+        }
+
+        // update and draw asteroids
+        for (auto &asteroid : vecAsteroids)
+        {
+            asteroid.x += asteroid.dx * fElapsedTime; // fElapsedTime - time between frames
+            asteroid.y += asteroid.dy * fElapsedTime;
+            wrapCoordinates(asteroid.x, asteroid.y, asteroid.x, asteroid.y);
             
-            for (int x = 0; x < a.size; x++)
+            for (int x = 0; x < asteroid.size; x++)
             {
-                for (int y = 0; y < a.size; y++)
+                for (int y = 0; y < asteroid.size; y++)
                 {
-                    Draw(a.x + x, a.y + y, olc::RED);
+                    Draw(asteroid.x + x, asteroid.y + y, olc::RED);
                 }
             }
         }
