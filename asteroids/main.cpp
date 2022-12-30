@@ -41,7 +41,6 @@ public:
     // called once at the start, so create things here
     bool OnUserCreate() override
     {
-        //vecAsteroids.push_back({20.0f, 20.0f, 8.0f, -6.0f, /*static_cast<int>(*/16/*)*/});
         vecAsteroids.push_back({20.0f, 20.0f, 8.0f, -6.0f, (int)16});
         return true;
     }
@@ -51,6 +50,8 @@ public:
     {
         // clear console
         PixelGameEngine::ConsoleClear();
+        // set the background color
+        Clear(olc::BLACK);
 
         // update and draw asteroids
         for (auto &a : vecAsteroids)
@@ -58,25 +59,20 @@ public:
             a.x += a.dx * fElapsedTime; // fElapsedTime - time between frames
             a.y += a.dy * fElapsedTime;
             wrapCoordinates(a.x, a.y, a.x, a.y);
-            //for (int x = 0; x < a.size; x++)
-            //{
-               // for (int y = 0; a.size; y++)
-                //{
-                 //   Draw(a.x + x, a.y + y, olc::RED);
-                    //  DrawRect(20.0f, 20.0f, 8, 8, olc::GREEN);
-                    Draw(a.x, a.y, olc::BLUE);
-           // }
+            
+            for (int x = 0; x < a.size; x++)
+            {
+                for (int y = 0; y < a.size; y++)
+                {
+                    Draw(a.x + x, a.y + y, olc::RED);
+                }
+            }
         }
-
-        // Called once per frame, draws random coloured pixels
-		//for (int _x = 0; _x < ScreenWidth(); _x++)
-		//	for (int _y = 0; _y < ScreenHeight(); _y++)
-		//		Draw(_x, _y, olc::Pixel(rand() % 256, rand() % 256, rand() % 256));
-
+    
         return true;
     }
 
-    // toroidal mapping
+    // toroidal mapping - so the asteroids will appear on the other side of screen
     void wrapCoordinates(float ix, float iy, float &ox, float &oy)
     {
         ox = ix;
@@ -92,11 +88,25 @@ public:
         }
         if(iy < 0.0f)
         {
-            iy + (float)ScreenHeight();
+            oy = iy + (float)ScreenHeight();
         }
         if (iy >= (float)ScreenHeight())
         {
             oy = iy - (float)ScreenHeight();
+        }
+    }
+
+    virtual bool Draw(int32_t x, int32_t y, olc::Pixel p = olc::WHITE) // override;
+    {
+        float fx, fy;
+        wrapCoordinates(x, y, fx, fy);
+        if (PixelGameEngine::Draw(fx, fy, p))
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
         }
     }
 };
@@ -106,47 +116,9 @@ int main()
     Asteroids demo;
     // construct screen
     // 160 wide 180 tall - 8 pixel per character
-    if (demo.Construct(160, 180, 8, 8))  
-    //	if (demo.Construct(256, 240, 4, 4))
+    if (demo.Construct(160, 180, 8, 8))
     {
         demo.Start();
     }
     return 0;
 }
-
-/*
-// Override base class with your custom functionality
-class Example : public olc::PixelGameEngine
-{
-public:
-	Example()
-	{
-		// Name your application
-		sAppName = "Example";
-	}
-
-public:
-	bool OnUserCreate() override
-	{
-		// Called once at the start, so create things here
-		return true;
-	}
-
-	bool OnUserUpdate(float fElapsedTime) override
-	{
-		// Called once per frame, draws random coloured pixels
-		for (int x = 0; x < ScreenWidth(); x++)
-			for (int y = 0; y < ScreenHeight(); y++)
-				Draw(x, y, olc::Pixel(rand() % 256, rand() % 256, rand() % 256));
-		return true;
-	}
-};
-
-int main()
-{
-	Example demo;
-	if (demo.Construct(256, 240, 4, 4))
-		demo.Start();
-	return 0;
-}
-*/
