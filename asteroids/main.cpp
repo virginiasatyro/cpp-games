@@ -8,15 +8,6 @@
 
 // g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
 
-/*
-v = p2 - p1 / t
-a = v2 - v1 / t
-p2 = vt - p1
-v2 = at + v1
-p = {x, y}
-v, a ~ {x, y}
-*/
-
 class Asteroids : public olc::PixelGameEngine
 {
 public:
@@ -37,6 +28,7 @@ private:
     };
 
     std::vector<spaceObject> vecAsteroids; // collect the different objects in vectors
+    std::vector<spaceObject> vecBullets;
     spaceObject spaceship;
 
     std::vector<std::pair<float, float>> vecModelShip;
@@ -65,7 +57,7 @@ public:
         int verts = 20; // each asteroid have 20 points
         for(int i = 0; i < verts; i++)
         {
-            float radius = 5.0f;
+            float radius = 1.0f;
             float a = ((float)i / (float)verts) * 6.28318f; // 2 * pi
             vecModelAsteroid.push_back(std::make_pair(radius * sinf(a), radius * cosf(a)));
         }
@@ -103,8 +95,39 @@ public:
         spaceship.x += spaceship.dx * fElapsedTime;
         spaceship.y += spaceship.dy * fElapsedTime;
 
+        // keep spaceship in gamespace
         wrapCoordinates(spaceship.x, spaceship.y, spaceship.x, spaceship.y);
 
+        // fire bullet
+        if(GetKey(olc::Key::SPACE).bReleased)
+        {
+            vecBullets.push_back({spaceship.x, spaceship.y, 50.0f * sinf(spaceship.angle), -50.0f * cosf(spaceship.angle), 0, 0.0f});
+        }
+
+        // update and draw bullets
+        for (auto &bullet : vecBullets)
+        {
+            bullet.x += bullet.dx * fElapsedTime; // fElapsedTime - time between frames
+            bullet.y += bullet.dy * fElapsedTime;
+            wrapCoordinates(bullet.x, bullet.y, bullet.x, bullet.y);
+
+            Draw(bullet.x, bullet.y);
+        }
+
+        // remove off screen bullets
+        if(vecBullets.size() > 0)
+        {
+            // [&] - lambda function - return a interator, sorts vec of bullets, if fails the if criteria,
+            // it is at the end, return true if the bullets are off the screen
+            auto i = remove_if(vecBullets.begin(), vecBullets.end(), [&](spaceObject o)
+                               { return (o.x < 1 || o.y < 1 || o.x >= ScreenWidth() || o.x >= ScreenHeight()); });
+            if (i != vecBullets.end())
+            {
+                vecBullets.erase(i);
+            }
+        }
+
+        // draw spaceship
         DrawWireFrameModel(vecModelShip, spaceship.x, spaceship.y, spaceship.angle);
 
         // update and draw asteroids
@@ -114,7 +137,7 @@ public:
             asteroid.y += asteroid.dy * fElapsedTime;
             wrapCoordinates(asteroid.x, asteroid.y, asteroid.x, asteroid.y);
 
-            DrawWireFrameModel(vecModelAsteroid, asteroid.x, asteroid.y, asteroid.angle);
+            DrawWireFrameModel(vecModelAsteroid, asteroid.x, asteroid.y, asteroid.angle, asteroid.size, olc::YELLOW);
         }
 
         return true;
@@ -210,3 +233,12 @@ int main()
     }
     return 0;
 }
+
+/*
+v = p2 - p1 / t
+a = v2 - v1 / t
+p2 = vt - p1
+v2 = at + v1
+p = {x, y}
+v, a ~ {x, y}
+*/
