@@ -24,10 +24,11 @@ public:
     {
         sAppName = "Asteroids";
     }
+
 private:
     struct spaceObject
     {
-        float x;  // position
+        float x; // position
         float y;
         float dx; // speed direction
         float dy;
@@ -37,6 +38,9 @@ private:
 
     std::vector<spaceObject> vecAsteroids; // collect the different objects in vectors
     spaceObject spaceship;
+
+    std::vector<std::pair<float, float>> vecModelShip;
+    std::vector<std::pair<float, float>> vecModelAsteroid;
 
 public:
     // called once at the start, so create things here
@@ -50,6 +54,22 @@ public:
         spaceship.dx = 0.0f;
         spaceship.dy = 0.0f;
         spaceship.angle = 0.0f;
+
+        vecModelShip =
+        {
+            {0.0f, -5.0f},
+            {-2.5f, +2.5f},
+            {+2.5f, +2.5f}
+        }; // simple isoceles triangle
+
+        int verts = 20; // each asteroid have 20 points
+        for(int i = 0; i < verts; i++)
+        {
+            float radius = 5.0f;
+            float a = ((float)i / (float)verts) * 6.28318f; // 2 * pi
+            vecModelAsteroid.push_back(std::make_pair(radius * sinf(a), radius * cosf(a)));
+        }
+
         return true;
     }
 
@@ -62,17 +82,17 @@ public:
         Clear(olc::BLACK);
 
         // steer
-        if(GetKey(olc::Key::LEFT).bHeld)
+        if (GetKey(olc::Key::LEFT).bHeld)
         {
             spaceship.angle -= 5.0f * fElapsedTime;
         }
-        if(GetKey(olc::Key::RIGHT).bHeld)
+        if (GetKey(olc::Key::RIGHT).bHeld)
         {
             spaceship.angle += 5.0f * fElapsedTime;
         }
 
         // thrust
-        if(GetKey(olc::Key::UP).bHeld)
+        if (GetKey(olc::Key::UP).bHeld)
         {
             // acceleration changes velocity (with respect to time)
             spaceship.dx += sin(spaceship.angle) * 20.0f * fElapsedTime;
@@ -85,32 +105,7 @@ public:
 
         wrapCoordinates(spaceship.x, spaceship.y, spaceship.x, spaceship.y);
 
-        // draw spaceship
-        float mx[3] = {0.0f, -2.5f, +2.5f}; // spaceship model vertices
-        float my[3] = {-5.5f, +2.5f, +2.5f};
-
-        float sx[3], sy[3];
-
-        // rotate
-        for (int i = 0; i < 3; i++)
-        {
-            sx[i] = mx[i] * cosf(spaceship.angle) - my[i] * sinf(spaceship.angle);
-            sy[i] = mx[i] * sinf(spaceship.angle) + my[i] * cosf(spaceship.angle);
-        }
-
-        // translate
-        for(int i = 0; i < 3; i++)
-        {
-            sx[i] = sx[i] + spaceship.x;
-            sy[i] = sy[i] + spaceship.y;
-        }
-
-        // draw closed polygon
-        for (int i = 0; i < 4; i++)
-        {
-            int j = i + 1;
-            DrawLine(sx[i % 3], sy[i % 3], sx[j % 3], sy[j % 3]); // module - to make sure all 3 lines are draw
-        }
+        DrawWireFrameModel(vecModelShip, spaceship.x, spaceship.y, spaceship.angle);
 
         // update and draw asteroids
         for (auto &asteroid : vecAsteroids)
@@ -118,16 +113,10 @@ public:
             asteroid.x += asteroid.dx * fElapsedTime; // fElapsedTime - time between frames
             asteroid.y += asteroid.dy * fElapsedTime;
             wrapCoordinates(asteroid.x, asteroid.y, asteroid.x, asteroid.y);
-            
-            for (int x = 0; x < asteroid.size; x++)
-            {
-                for (int y = 0; y < asteroid.size; y++)
-                {
-                    Draw(asteroid.x + x, asteroid.y + y, olc::RED);
-                }
-            }
+
+            DrawWireFrameModel(vecModelAsteroid, asteroid.x, asteroid.y, asteroid.angle);
         }
-    
+
         return true;
     }
 
@@ -137,15 +126,15 @@ public:
         ox = ix;
         oy = iy;
 
-        if(ix < 0.0f)
+        if (ix < 0.0f)
         {
             ox = ix + (float)ScreenWidth();
         }
-        if(ix >= (float)ScreenWidth())
+        if (ix >= (float)ScreenWidth())
         {
             ox = ix - (float)ScreenWidth();
         }
-        if(iy < 0.0f)
+        if (iy < 0.0f)
         {
             oy = iy + (float)ScreenHeight();
         }
@@ -166,6 +155,46 @@ public:
         else
         {
             return 0;
+        }
+    }
+
+    void DrawWireFrameModel(const std::vector<std::pair<float, float>> &vecModelCoordinates, float x, float y, float r = 0.0f, float s = 1.0f, olc::Pixel col = olc::WHITE)
+    {
+        // pair.first = x coordinate
+        // pair.second = y coordinate
+
+        // create translated model vector of coordinate pairs
+        std::vector<std::pair<float, float>> vecTransformedCoordinates;
+        int verts = vecModelCoordinates.size();
+        vecTransformedCoordinates.resize(verts);
+
+        // rotate
+        for (int i = 0; i < verts; i++)
+        {
+            vecTransformedCoordinates[i].first = vecModelCoordinates[i].first * cosf(r) - vecModelCoordinates[i].second * sinf(r);
+            vecTransformedCoordinates[i].second = vecModelCoordinates[i].first * sinf(r) + vecModelCoordinates[i].second * cosf(r);
+        }
+
+        // scale
+        for (int i = 0; i < verts; i++)
+        {
+            vecTransformedCoordinates[i].first = vecTransformedCoordinates[i].first * s;
+            vecTransformedCoordinates[i].second = vecTransformedCoordinates[i].second * s;
+        }
+
+        // translate
+        for (int i = 0; i < verts; i++)
+        {
+            vecTransformedCoordinates[i].first = vecTransformedCoordinates[i].first + x;
+            vecTransformedCoordinates[i].second = vecTransformedCoordinates[i].second + y;
+        }
+
+        // draw closed polygon
+        for (int i = 0; i < verts + 1; i++)
+        {
+            int j = (i + 1);
+            DrawLine((int)vecTransformedCoordinates[i % verts].first, (int)vecTransformedCoordinates[i % verts].second,
+                     (int)vecTransformedCoordinates[j % verts].first, (int)vecTransformedCoordinates[j % verts].second, col, 0xFFFFFFFF);
         }
     }
 };
