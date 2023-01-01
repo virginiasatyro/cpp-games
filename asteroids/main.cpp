@@ -9,6 +9,7 @@
 // g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
 
 constexpr float piX2 = 6.283185f;
+constexpr float pi = 3.14159f;
 constexpr float invalidCoordinate = -100.0f;
 
 class Asteroids : public olc::PixelGameEngine
@@ -53,7 +54,7 @@ public:
         int verts = 20; // each asteroid have 20 points
         for(int i = 0; i < verts; i++)
         {
-            float radius = 1.0f;
+            float radius = (float)rand() / (float)RAND_MAX * 0.4f + 0.8f;
             float a = ((float)i / (float)verts) * piX2; // 2 * pi
             vecModelAsteroid.push_back(std::make_pair(radius * sinf(a), radius * cosf(a)));
         }
@@ -156,6 +157,7 @@ public:
                     }
                     // kill the old asteroid
                     asteroid.x = invalidCoordinate;
+                    score += 100;
                 }
             }
         }
@@ -190,8 +192,17 @@ public:
             }
         }
 
+        if(vecAsteroids.empty())
+        {
+            score += 1000;
+
+        }
+
         // draw spaceship
         DrawWireFrameModel(vecModelShip, spaceship.x, spaceship.y, spaceship.angle);
+
+        // draw score
+        DrawString(2, 2, "SCORE: " + std::to_string(score), olc::WHITE, 1);
 
         return true;
     }
@@ -284,8 +295,12 @@ public:
         vecAsteroids.clear();
         vecBullets.clear();
 
-        vecAsteroids.push_back({20.0f, 20.0f, 8.0f, -6.0f, (int)16, 0.0f});
-        vecAsteroids.push_back({100.0f, 20.0f, -5.0f, 3.0f, (int)16, 0.0f});
+        vecAsteroids.push_back({30.0f * sinf(spaceship.angle - pi / 2.0f) + spaceship.x,
+                                30.0f * cosf(spaceship.angle - pi / 2.0f) + spaceship.y,
+                                10.0f * sinf(spaceship.angle), 10.0f * cosf(spaceship.angle), (int)16, 0.0f});
+        vecAsteroids.push_back({30.0f * sinf(spaceship.angle + pi / 2.0f) + spaceship.x,
+                                30.0f * cosf(spaceship.angle + pi / 2.0f) + spaceship.y,
+                                10.0f * sinf(-spaceship.angle), 10.0f * cosf(-spaceship.angle), (int)16, 0.0f});
 
         // initialize spaceship position
         spaceship.x = ScreenWidth() / 2.0f;
