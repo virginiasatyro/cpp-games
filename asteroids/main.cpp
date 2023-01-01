@@ -8,6 +8,9 @@
 
 // g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
 
+constexpr float piX2 = 6.283185f;
+constexpr float invalidCoordinate = -100.0f;
+
 class Asteroids : public olc::PixelGameEngine
 {
 public:
@@ -30,6 +33,8 @@ private:
     std::vector<spaceObject> vecAsteroids; // collect the different objects in vectors
     std::vector<spaceObject> vecBullets;
     spaceObject spaceship;
+    int score = 0;
+    bool spaceshipDead = false;
 
     std::vector<std::pair<float, float>> vecModelShip;
     std::vector<std::pair<float, float>> vecModelAsteroid;
@@ -38,15 +43,6 @@ public:
     // called once at the start, so create things here
     bool OnUserCreate() override
     {
-        vecAsteroids.push_back({20.0f, 20.0f, 8.0f, -6.0f, (int)16, 0.0f});
-
-        // initialize spaceship position
-        spaceship.x = ScreenWidth() / 2.0f;
-        spaceship.y = ScreenHeight() / 2.0f;
-        spaceship.dx = 0.0f;
-        spaceship.dy = 0.0f;
-        spaceship.angle = 0.0f;
-
         vecModelShip =
         {
             {0.0f, -5.0f},
@@ -58,9 +54,11 @@ public:
         for(int i = 0; i < verts; i++)
         {
             float radius = 1.0f;
-            float a = ((float)i / (float)verts) * 6.28318f; // 2 * pi
+            float a = ((float)i / (float)verts) * piX2; // 2 * pi
             vecModelAsteroid.push_back(std::make_pair(radius * sinf(a), radius * cosf(a)));
         }
+
+        resetGame();
 
         return true;
     }
@@ -68,6 +66,12 @@ public:
     // called once per frame
     bool OnUserUpdate(float fElapsedTime) override
     {
+        // if spaceship is dead, reset the game
+        if(spaceshipDead)
+        {
+            resetGame();
+        }
+
         // clear console
         PixelGameEngine::ConsoleClear();
         // set the background color
@@ -98,11 +102,32 @@ public:
         // keep spaceship in gamespace
         wrapCoordinates(spaceship.x, spaceship.y, spaceship.x, spaceship.y);
 
+        // check ship collision with asteroids
+        for (auto &asteroid : vecAsteroids)
+        {
+            if (isPointInsideCircle(asteroid.x, asteroid.y, asteroid.size, spaceship.x, spaceship.y))
+            {
+                spaceshipDead = true;
+            }
+        }
+
         // fire bullet
         if(GetKey(olc::Key::SPACE).bReleased)
         {
             vecBullets.push_back({spaceship.x, spaceship.y, 50.0f * sinf(spaceship.angle), -50.0f * cosf(spaceship.angle), 0, 0.0f});
         }
+
+        // update and draw asteroids
+        for (auto &asteroid : vecAsteroids)
+        {
+            asteroid.x += asteroid.dx * fElapsedTime; // fElapsedTime - time between frames
+            asteroid.y += asteroid.dy * fElapsedTime;
+            wrapCoordinates(asteroid.x, asteroid.y, asteroid.x, asteroid.y);
+
+            DrawWireFrameModel(vecModelAsteroid, asteroid.x, asteroid.y, asteroid.angle, asteroid.size, olc::YELLOW);
+        }
+
+        std::vector<spaceObject> newAsteroids;
 
         // update and draw bullets
         for (auto &bullet : vecBullets)
@@ -112,6 +137,33 @@ public:
             wrapCoordinates(bullet.x, bullet.y, bullet.x, bullet.y);
 
             Draw(bullet.x, bullet.y);
+
+            // check collision with asteroids
+            for (auto &asteroid : vecAsteroids)
+            {
+                if(isPointInsideCircle(asteroid.x, asteroid.y, asteroid.size, bullet.x, bullet.y))
+                {
+                    // asteroid hit
+                    bullet.x = invalidCoordinate; // force bullet to be out of screen
+
+                    if(asteroid.size > 4)
+                    {
+                        // create two child asteroids
+                        float angle1 = ((float)rand() / (float)RAND_MAX) * piX2; // randon angle betwwen 0 and 2pi
+                        float angle2 = ((float)rand() / (float)RAND_MAX) * piX2; // randon angle betwwen 0 and 2pi
+                        newAsteroids.push_back({asteroid.x, asteroid.y, 10.0f * sinf(angle1), 10.0f * cosf(angle1), (int)asteroid.size >> 1, 0.0f });
+                        newAsteroids.push_back({asteroid.x, asteroid.y, 10.0f * sinf(angle2), 10.0f * cosf(angle2), (int)asteroid.size >> 1, 0.0f });
+                    }
+                    // kill the old asteroid
+                    asteroid.x = invalidCoordinate;
+                }
+            }
+        }
+
+        // append new asteroids to existing vector
+        for (auto asteroid : newAsteroids)
+        {
+            vecAsteroids.push_back(asteroid);
         }
 
         // remove off screen bullets
@@ -127,18 +179,19 @@ public:
             }
         }
 
+        // remove off screen asteroids
+        if(vecAsteroids.size() > 0)
+        {
+            auto i = remove_if(vecAsteroids.begin(), vecAsteroids.end(), [&](spaceObject o)
+                               { return (o.x < 0); });
+            if (i != vecAsteroids.end())
+            {
+                vecAsteroids.erase(i);
+            }
+        }
+
         // draw spaceship
         DrawWireFrameModel(vecModelShip, spaceship.x, spaceship.y, spaceship.angle);
-
-        // update and draw asteroids
-        for (auto &asteroid : vecAsteroids)
-        {
-            asteroid.x += asteroid.dx * fElapsedTime; // fElapsedTime - time between frames
-            asteroid.y += asteroid.dy * fElapsedTime;
-            wrapCoordinates(asteroid.x, asteroid.y, asteroid.x, asteroid.y);
-
-            DrawWireFrameModel(vecModelAsteroid, asteroid.x, asteroid.y, asteroid.angle, asteroid.size, olc::YELLOW);
-        }
 
         return true;
     }
@@ -220,14 +273,38 @@ public:
                      (int)vecTransformedCoordinates[j % verts].first, (int)vecTransformedCoordinates[j % verts].second, col, 0xFFFFFFFF);
         }
     }
+
+    bool isPointInsideCircle(float cx, float cy, float radius, float x, float y)
+    {
+        return sqrt((x - cx)*(x - cx) + (y - cy) * (y - cy)) < radius;
+    }
+
+    void resetGame()
+    {
+        vecAsteroids.clear();
+        vecBullets.clear();
+
+        vecAsteroids.push_back({20.0f, 20.0f, 8.0f, -6.0f, (int)16, 0.0f});
+        vecAsteroids.push_back({100.0f, 20.0f, -5.0f, 3.0f, (int)16, 0.0f});
+
+        // initialize spaceship position
+        spaceship.x = ScreenWidth() / 2.0f;
+        spaceship.y = ScreenHeight() / 2.0f;
+        spaceship.dx = 0.0f;
+        spaceship.dy = 0.0f;
+        spaceship.angle = 0.0f;
+
+        spaceshipDead = false;
+        score = 0;
+    }
 };
 
 int main()
 {
     Asteroids demo;
     // construct screen
-    // 160 wide 180 tall - 8 pixel per character
-    if (demo.Construct(160, 180, 8, 8))
+    // 160 wide 180 tall - 8 pixel per character (changed to 4)
+    if (demo.Construct(160, 180, 4, 4))
     {
         demo.Start();
     }
