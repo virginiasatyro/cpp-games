@@ -30,9 +30,9 @@ public:
     {
         sprPlayer = new olc::Sprite("img/Emissary.png");
 
-        playerPos = {(float)ScreenWidth() / 2.0f, (float)ScreenHeight() / 2.0f};
+        playerPos = {static_cast<float>(ScreenWidth()) / 2.0f, static_cast<float>(ScreenHeight()) / 2.0f};
 
-        for (auto &star : arrStars) star = {(float)(rand() % ScreenWidth()), (float)(rand() % ScreenHeight())};
+        for (auto &star : arrStars) star = {static_cast<float>(rand() % ScreenWidth()), static_cast<float>(rand() % ScreenHeight())};
 
         return true;
     }
@@ -54,14 +54,16 @@ public:
         Clear(olc::BLACK);
 
         // Draw stars
-        for (auto &star : arrStars)
+        for (size_t i = 0; i < arrStars.size(); i++)
         {
-            star.y += worldSpeed * fElapsedTime;
-            if (star.y > ScreenHeight())
+            auto &star = arrStars[i];
+
+            star.y += worldSpeed * fElapsedTime * ((i < 300) ? 0.8f : 1.0f);
+            if (star.y > static_cast<float>(ScreenHeight()))
             {
-                star = {(float)(rand() % ScreenWidth()), 0.0f};
+                star = {static_cast<float>(rand() % ScreenWidth()), 0.0f};
             }
-            Draw(star);  
+            Draw(star, ((i < 300) ? olc::VERY_DARK_GREY : olc::WHITE));  
         }
 
         // Draw spaceship
