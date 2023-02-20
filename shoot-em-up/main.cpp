@@ -17,7 +17,11 @@ public:
 
     olc::vf2d playerPos;
     olc::Sprite* sprPlayer = nullptr;
-    float playerSpeed = 200.f;
+    float playerSpeed = 100.f;
+
+    std::array<olc::vf2d, 1000> arrStars;
+
+    float worldSpeed = 20.0f;
 
 private:
 public:
@@ -26,7 +30,10 @@ public:
     {
         sprPlayer = new olc::Sprite("img/Emissary.png");
 
-        playerPos = {ScreenWidth() / 2.0f, ScreenHeight() / 2.0f};
+        playerPos = {(float)ScreenWidth() / 2.0f, (float)ScreenHeight() / 2.0f};
+
+        for (auto &star : arrStars) star = {(float)(rand() % ScreenWidth()), (float)(rand() % ScreenHeight())};
+
         return true;
     }
 
@@ -38,14 +45,30 @@ public:
         if(GetKey(olc::S).bHeld || GetKey(olc::DOWN).bHeld) playerPos.y += playerSpeed * fElapsedTime;
         if(GetKey(olc::A).bHeld || GetKey(olc::LEFT).bHeld) playerPos.x -= playerSpeed * fElapsedTime;
         if(GetKey(olc::D).bHeld || GetKey(olc::RIGHT).bHeld) playerPos.x += playerSpeed * fElapsedTime;
-
+ 
         // ---------------------------------------------------------------------------------------------------------------
 
 
         // DISPLAY -------------------------------------------------------------------------------------------------------
+        // Clear display
         Clear(olc::BLACK);
 
+        // Draw stars
+        for (auto &star : arrStars)
+        {
+            star.y += worldSpeed * fElapsedTime;
+            if (star.y > ScreenHeight())
+            {
+                star = {(float)(rand() % ScreenWidth()), 0.0f};
+            }
+            Draw(star);  
+        }
+
+        // Draw spaceship
+        // SetPixelMode(olc::Pixel::MASK); // allow mask - transparency
         DrawSprite(playerPos, sprPlayer);
+
+        // SetPixelMode(olc::Pixel::NORMAL);
 
         return true;
     }
@@ -56,7 +79,6 @@ int main()
     Shmup demo;
     // construct screen
     if (demo.Construct(640, 480, 2, 2))
-   // if (demo.Construct(2560, 1920, 1, 1))
     {
         demo.Start();
     }
