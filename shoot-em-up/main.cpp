@@ -57,10 +57,10 @@ public:
     // called once at the start, so create things here
     bool OnUserCreate() override
     {
-        sprPlayer = new olc::Sprite("img/Emissary.png");
-        sprEnemy[0] = new olc::Sprite("img/Beholder.png");
-        sprEnemy[1] = new olc::Sprite("img/Beholder.png");
-        sprEnemy[2] = new olc::Sprite("img/Beholder.png");
+        sprPlayer = new olc::Sprite("img/blue_01.png");
+        sprEnemy[0] = new olc::Sprite("img/red_01.png");
+        sprEnemy[1] = new olc::Sprite("img/orange_03.png");
+        sprEnemy[2] = new olc::Sprite("img/green_06.png");
 
         playerPos = {static_cast<float>(ScreenWidth()) / 2.0f, static_cast<float>(ScreenHeight()) / 2.0f};
 
@@ -77,7 +77,12 @@ public:
 
         listSpaws =
             {
-                {100.0, 0, 3.0f, 0.5f, Move_None}
+                {60.0, 0, 3.0f, 0.1f, Move_None},
+                {120.0, 1, 3.0f, 0.25f, Move_None},
+                {120.0, 1, 3.0f, 0.75f, Move_None},
+                {180.0, 2, 3.0f, 0.5f, Move_None},
+                {180.0, 2, 3.0f, 0.9f, Move_None},
+                {180.0, 2, 3.0f, 0.4f, Move_None}
             };
 
         return true;
@@ -125,6 +130,9 @@ public:
             enemy.update(fElapsedTime, worldSpeed);
         }
 
+        // Remove enemies that are redundant
+        listEnemies.remove_if([&](const Enemy& e){return (e.pos.y >= (float)ScreenHeight()) || e.def.health <= 0;});
+
         // DISPLAY -------------------------------------------------------------------------------------------------------
         // Clear display
         Clear(olc::BLACK);
@@ -144,7 +152,7 @@ public:
         }
 
         // Draw spaceship
-        // SetPixelMode(olc::Pixel::MASK); // allow mask - transparency
+        SetPixelMode(olc::Pixel::MASK); // allow mask - transparency
         DrawSprite(playerPos, sprPlayer);
 
         for (auto &enemy : listEnemies)
@@ -152,7 +160,7 @@ public:
             DrawSprite(enemy.pos, sprEnemy[enemy.def.sprID]);
         }
 
-        // SetPixelMode(olc::Pixel::NORMAL);
+        SetPixelMode(olc::Pixel::NORMAL);
 
         return true;
     }
