@@ -71,6 +71,7 @@ public:
     std::list<Enemy> listEnemies;
     std::list<Bullet> listBullets;
     std::list<Bullet> listPlayerBullets;
+    std::list<Bullet> listFragments;
 
 private:
 public:
@@ -241,6 +242,12 @@ public:
             listEnemies.push_back(e);
         }
 
+        // Update fragments - behave like bullets
+        for(auto &b : listFragments)
+        {
+            b.pos += (b.vel + olc::vf2d(0.0f, worldSpeed)) * fElapsedTime;
+        }
+
         // Update enemies
         for (auto &enemy : listEnemies)
         {
@@ -272,6 +279,24 @@ public:
                 {
                     b.remove = true;
                     e.def.health -= 25.0f; // one hit and enemy is off
+
+                    // enemy destroyed
+                    if (e.def.health <= 0)
+                    {
+                        for (int i = 0; i < 500; i++)
+                        {
+                            float angle = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;
+                            float speed = ((float)rand() / (float)RAND_MAX) * 200.0f + 50.0f;
+                            listFragments.push_back(
+                                {
+                                    e.pos + olc::vf2d(24, 24), // start explosion in the middle of enemy sprite
+                                    {
+                                        speed * cosf(angle), speed * sinf(angle)
+                                    }
+                                }
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -286,6 +311,10 @@ public:
 
         // Remove player bullets off screen
         listPlayerBullets.remove_if([&](const Bullet &b)
+                              { return (b.pos.x < 0 || b.pos.x > (float)ScreenWidth() || b.pos.y > (float)ScreenHeight() || b.pos.y < 0 || b.remove); });
+
+        // Remove fragments
+        listFragments.remove_if([&](const Bullet &b)
                               { return (b.pos.x < 0 || b.pos.x > (float)ScreenWidth() || b.pos.y > (float)ScreenHeight() || b.pos.y < 0 || b.remove); });
 
         // DISPLAY -------------------------------------------------------------------------------------------------------
@@ -327,6 +356,12 @@ public:
         for (auto b : listPlayerBullets)
         {
             FillCircle(b.pos, 3, olc::CYAN);
+        }
+
+        // Draw fragments
+        for( auto&b : listFragments)
+        {
+            Draw(b.pos, olc::YELLOW);
         }
 
         // Draw HUD
