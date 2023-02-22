@@ -127,9 +127,29 @@ public:
             }
         };
 
+        auto Fire_CirclePulse2 = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed, std::list<Bullet> &bullets)
+        {
+            constexpr float delay = 2.0f;
+            constexpr int nBullets = 10;
+            constexpr float fTheta = 3.14159f * 2.0f / (float)nBullets;
+            enemy.dataFire[0] += fElapsedTime;
+
+            if(enemy.dataFire[0] >= delay)
+            {
+                enemy.dataFire[0] -= delay;
+                for (int i = 0; i < nBullets; i++)
+                {
+                    Bullet b;
+                    b.pos = enemy.pos + olc::vf2d(24, 24);
+                    b.vel = {180.0f * cos(fTheta * i), 180.0f * sinf(fTheta * i)};
+                    bullets.push_back(b);
+                }
+            }
+        };
+
         listSpaws =
             {
-                {60.0, 0, 3.0f, 0.5f, Move_SinusoidWide, Fire_None},
+                {60.0, 0, 3.0f, 0.5f, Move_SinusoidWide, Fire_CirclePulse2},
                 {240.0, 1, 3.0f, 0.25f, Move_SinusoidNarrow, Fire_Straight2},
                 {240.0, 1, 3.0f, 0.75f, Move_SinusoidNarrow, Fire_Straight2},
                 {360.0, 2, 3.0f, 0.25f, Move_None, Fire_Straight2},
