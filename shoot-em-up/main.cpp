@@ -21,10 +21,17 @@ public:
 
     float playerSpeed = 100.f;
 
-    std::array<olc::vf2d, 1000> arrStars;
-
     float worldSpeed = 40.0f;
     double worldPos = 0.0f;
+
+    std::array<olc::vf2d, 1000> arrStars;
+
+    struct Bullet
+    {
+        olc::vf2d pos;
+        olc::vf2d vel; // velocity - speed and direction
+        bool remove = false;
+    };
 
     struct Enemy;
 
@@ -36,6 +43,7 @@ public:
         float offset = 0.0f;
 
         std::function<void(Enemy&, float, float)> funcMove; // lambda
+        std::function<void(Enemy&, float, float, std::list<Bullet>&)> funcFire;
     };
 
     struct Enemy
@@ -43,14 +51,19 @@ public:
         olc::vf2d pos;
         enemyDefinition def;
 
-        void update(float fElapsedTime, float scrollSpeed)
+        std::array<float, 4> dataMove{0};
+        std::array<float, 4> dataFire{0};
+
+        void update(float fElapsedTime, float scrollSpeed, std::list<Bullet> &b)
         {
             def.funcMove(*this, fElapsedTime, scrollSpeed);
+            def.funcFire(*this, fElapsedTime, scrollSpeed, b);
         }
     };
 
     std::list<enemyDefinition> listSpaws;
     std::list<Enemy> listEnemies;
+    std::list<Bullet> listBullets;
 
 private:
 public:
@@ -75,14 +88,39 @@ public:
             enemy.pos.y += scrollSpeed * fElapsedTime;
         };
 
+        auto Move_Fast = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed)
+        {
+            enemy.pos.y += scrollSpeed * fElapsedTime * 3.0f;
+        };
+
+        // Firing patterns
+        auto Fire_None = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed, std::list<Bullet> &bullets)
+        {
+            //
+        };
+
+        auto Fire_Straight2 = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed, std::list<Bullet> &bullets)
+        {
+            constexpr float delay = 0.8f;
+            enemy.dataFire[0] += fElapsedTime;
+            if(enemy.dataFire[0] >= delay)
+            {
+                enemy.dataFire[0] -= delay;
+                Bullet b;
+                b.pos = enemy.pos + olc::vf2d(24, 48); // depends on sprites size
+                b.vel = {0.0f, 180.0f};
+                bullets.push_back(b);
+            }
+        };
+
         listSpaws =
             {
-                {60.0, 0, 3.0f, 0.1f, Move_None},
-                {120.0, 1, 3.0f, 0.25f, Move_None},
-                {120.0, 1, 3.0f, 0.75f, Move_None},
-                {180.0, 2, 3.0f, 0.5f, Move_None},
-                {180.0, 2, 3.0f, 0.9f, Move_None},
-                {180.0, 2, 3.0f, 0.4f, Move_None}
+                {60.0, 0, 3.0f, 0.5f, Move_None, Fire_None},
+                {240.0, 1, 3.0f, 0.25f, Move_Fast, Fire_Straight2},
+                {240.0, 1, 3.0f, 0.75f, Move_Fast, Fire_Straight2},
+                {360.0, 2, 3.0f, 0.25f, Move_None, Fire_Straight2},
+                {360.0, 2, 3.0f, 0.5f, Move_None, Fire_None},
+                {360.0, 2, 3.0f, 0.75f, Move_None, Fire_Straight2},
             };
 
         return true;
@@ -127,11 +165,22 @@ public:
         // Update enemies
         for (auto &enemy : listEnemies)
         {
-            enemy.update(fElapsedTime, worldSpeed);
+            enemy.update(fElapsedTime, worldSpeed, listBullets);
+        }
+
+        // Update bullets
+        for(auto &b : listBullets)
+        {
+            b.pos += (b.vel + olc::vf2d(0.0f, worldSpeed)) * fElapsedTime;
         }
 
         // Remove enemies that are redundant
-        listEnemies.remove_if([&](const Enemy& e){return (e.pos.y >= (float)ScreenHeight()) || e.def.health <= 0;});
+        listEnemies.remove_if([&](const Enemy &e)
+                              { return (e.pos.y >= (float)ScreenHeight()) || e.def.health <= 0; });
+
+        // Remove bullets off screen
+        listBullets.remove_if([&](const Bullet &b)
+                              { return (b.pos.x < 0 || b.pos.x > (float)ScreenWidth() || b.pos.y > (float)ScreenHeight() || b.pos.y < 0 || b.remove); });
 
         // DISPLAY -------------------------------------------------------------------------------------------------------
         // Clear display
@@ -161,6 +210,12 @@ public:
         }
 
         SetPixelMode(olc::Pixel::NORMAL);
+
+        // Draw bullets
+        for (auto b : listBullets)
+        {
+            FillCircle(b.pos, 3, olc::RED);
+        }
 
         return true;
     }
