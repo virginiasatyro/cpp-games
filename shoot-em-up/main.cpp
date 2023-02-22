@@ -93,6 +93,20 @@ public:
             enemy.pos.y += scrollSpeed * fElapsedTime * 3.0f;
         };
 
+        auto Move_SinusoidNarrow = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed)
+        {
+            enemy.pos.y += scrollSpeed * fElapsedTime * 1.0f;
+            enemy.dataMove[0] += fElapsedTime;
+            enemy.pos.x += 50.0f * cosf(enemy.dataMove[0]) * fElapsedTime;
+        };
+
+        auto Move_SinusoidWide = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed)
+        {
+            enemy.pos.y += scrollSpeed * fElapsedTime * 1.0f;
+            enemy.dataMove[0] += fElapsedTime;
+            enemy.pos.x += 200.0f * cosf(enemy.dataMove[0]) * fElapsedTime;
+        };
+
         // Firing patterns
         auto Fire_None = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed, std::list<Bullet> &bullets)
         {
@@ -115,9 +129,9 @@ public:
 
         listSpaws =
             {
-                {60.0, 0, 3.0f, 0.5f, Move_None, Fire_None},
-                {240.0, 1, 3.0f, 0.25f, Move_Fast, Fire_Straight2},
-                {240.0, 1, 3.0f, 0.75f, Move_Fast, Fire_Straight2},
+                {60.0, 0, 3.0f, 0.5f, Move_SinusoidWide, Fire_None},
+                {240.0, 1, 3.0f, 0.25f, Move_SinusoidNarrow, Fire_Straight2},
+                {240.0, 1, 3.0f, 0.75f, Move_SinusoidNarrow, Fire_Straight2},
                 {360.0, 2, 3.0f, 0.25f, Move_None, Fire_Straight2},
                 {360.0, 2, 3.0f, 0.5f, Move_None, Fire_None},
                 {360.0, 2, 3.0f, 0.75f, Move_None, Fire_Straight2},
