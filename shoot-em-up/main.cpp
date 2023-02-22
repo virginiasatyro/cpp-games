@@ -30,6 +30,8 @@ public:
     float gunReloadTimer = 0.0f;
     float gunReloadDelay = 0.2f;
 
+    bool canFire = false;
+
     struct Bullet
     {
         olc::vf2d pos;
@@ -168,25 +170,43 @@ public:
     // called once per frame
     bool OnUserUpdate(float fElapsedTime) override
     {
+        playerPos.y += worldSpeed * fElapsedTime;
         // INPUT ---------------------------------------------------------------------------------------------------------
         if (GetKey(olc::W).bHeld || GetKey(olc::UP).bHeld)
         {
-            playerPos.y -= playerSpeed * fElapsedTime;
+            playerPos.y -= (playerSpeed + worldSpeed) * fElapsedTime;
         }
         if (GetKey(olc::S).bHeld || GetKey(olc::DOWN).bHeld)
         {
-            playerPos.y += playerSpeed * fElapsedTime;
+            playerPos.y += (playerSpeed - worldSpeed) * fElapsedTime;
         }
         if (GetKey(olc::A).bHeld || GetKey(olc::LEFT).bHeld)
         {
-            playerPos.x -= playerSpeed * fElapsedTime;
+            playerPos.x -= playerSpeed * fElapsedTime * 2.0f;
         }
         if (GetKey(olc::D).bHeld || GetKey(olc::RIGHT).bHeld)
         {
-            playerPos.x += playerSpeed * fElapsedTime;
+            playerPos.x += playerSpeed * fElapsedTime * 2.0f;
         }
 
-        bool canFire = false;
+        // Spaceship cant go off screen
+        if(playerPos.x <= 0)
+        {
+            playerPos.x = 0;
+        }
+        if(playerPos.y <= 0)
+        {
+            playerPos.y = 0;
+        }
+        if(playerPos.x + 48.0f >= (float)ScreenWidth())
+        {
+            playerPos.x = (float)ScreenWidth() - 48.0f;
+        }
+        if(playerPos.y + 48.0f >= (float)ScreenHeight())
+        {
+            playerPos.y = (float)ScreenHeight()- 48.0f;
+        }
+
         gunReloadTimer += fElapsedTime;
         if(gunReloadTimer >= gunReloadDelay)
         {
@@ -202,6 +222,7 @@ public:
                 b.pos = {playerPos.x + 24.0f, playerPos.y};
                 b.vel = {0.0, -200.0f};
                 listPlayerBullets.push_back(b);
+                canFire = false;
             }
         }
 
