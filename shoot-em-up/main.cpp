@@ -19,12 +19,16 @@ public:
     olc::Sprite* sprPlayer = nullptr;
     olc::Sprite* sprEnemy[3];
 
-    float playerSpeed = 100.f;
+    float playerSpeed = 100.0f;
+    float playerHealth = 100.0f;
 
     float worldSpeed = 40.0f;
     double worldPos = 0.0f;
 
     std::array<olc::vf2d, 1000> arrStars;
+
+    float gunReloadTimer = 0.0f;
+    float gunReloadDelay = 0.2f;
 
     struct Bullet
     {
@@ -39,7 +43,7 @@ public:
     {
         double triggerTime = 0.0f;
         uint32_t sprID = 0;
-        float health = 0.0f;
+        float health = 100.0f;
         float offset = 0.0f;
 
         std::function<void(Enemy&, float, float)> funcMove; // lambda
@@ -64,6 +68,7 @@ public:
     std::list<enemyDefinition> listSpaws;
     std::list<Enemy> listEnemies;
     std::list<Bullet> listBullets;
+    std::list<Bullet> listPlayerBullets;
 
 private:
 public:
@@ -181,6 +186,25 @@ public:
             playerPos.x += playerSpeed * fElapsedTime;
         }
 
+        bool canFire = false;
+        gunReloadTimer += fElapsedTime;
+        if(gunReloadTimer >= gunReloadDelay)
+        {
+            canFire = true;
+            gunReloadTimer -= gunReloadDelay;
+        }
+
+        if(GetKey(olc::SPACE).bHeld || GetMouse(0).bHeld)
+        {
+            if(canFire)
+            {
+                Bullet b;
+                b.pos = {playerPos.x + 24.0f, playerPos.y};
+                b.vel = {0.0, -200.0f};
+                listPlayerBullets.push_back(b);
+            }
+        }
+
         // ---------------------------------------------------------------------------------------------------------------
         worldPos += worldSpeed * fElapsedTime;
 
@@ -206,14 +230,41 @@ public:
         for(auto &b : listBullets)
         {
             b.pos += (b.vel + olc::vf2d(0.0f, worldSpeed)) * fElapsedTime;
+
+            // circle x circle collision
+            if ((b.pos - (playerPos + olc::vf2d(24, 24))).mag2() < 24.0f * 24.0f) // player position = top left of the sprite
+            { 
+                b.remove = true;
+                playerHealth -= 10.0f;
+            }
+        }
+
+        // Update player bullets
+        for (auto &b : listPlayerBullets)
+        {
+            b.pos += (b.vel + olc::vf2d(0.0f, worldSpeed)) * fElapsedTime;
+
+            // Check eneies vs player bullets
+            for (auto &e : listEnemies)
+            {
+                if ((b.pos - (e.pos + olc::vf2d(24, 24))).mag2() < 24.0f * 24.0f)
+                {
+                    b.remove = true;
+                    e.def.health -= 25.0f; // one hit and enemy is off
+                }
+            }
         }
 
         // Remove enemies that are redundant
         listEnemies.remove_if([&](const Enemy &e)
-                              { return (e.pos.y >= (float)ScreenHeight()) || e.def.health <= 0; });
+                              { return (e.pos.y >= (float)ScreenHeight()) || e.def.health <= 0.0f; });
 
         // Remove bullets off screen
         listBullets.remove_if([&](const Bullet &b)
+                              { return (b.pos.x < 0 || b.pos.x > (float)ScreenWidth() || b.pos.y > (float)ScreenHeight() || b.pos.y < 0 || b.remove); });
+
+        // Remove player bullets off screen
+        listPlayerBullets.remove_if([&](const Bullet &b)
                               { return (b.pos.x < 0 || b.pos.x > (float)ScreenWidth() || b.pos.y > (float)ScreenHeight() || b.pos.y < 0 || b.remove); });
 
         // DISPLAY -------------------------------------------------------------------------------------------------------
@@ -250,6 +301,16 @@ public:
         {
             FillCircle(b.pos, 3, olc::RED);
         }
+
+        // Draw player bullets
+        for (auto b : listPlayerBullets)
+        {
+            FillCircle(b.pos, 3, olc::CYAN);
+        }
+
+        // Draw HUD
+        DrawString(4, 4, "HEALTH:");
+        FillRect(60, 4, (playerHealth / 100.0f * 576.0f), 8, olc::GREEN);
 
         return true;
     }
