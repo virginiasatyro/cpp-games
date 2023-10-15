@@ -2,18 +2,26 @@
     First Person Shooter
 
     - Based on https://www.youtube.com/watch?v=xW8skO7MFYw - for learning purposes;
+
     - Compiling: g++ -o main.exe main.cpp
+
     - UNICODE: The Unicode Standard is the specification of an encoding scheme for written
       characters and text. It is a universal standard that enables consistent encoding of 
       multilingual text and allows text data to be interchanged internationally without conflict.
       https://www.ibm.com/docs/en/i/7.4?topic=set-unicode-standard-c-only
+
     - Based on https://pt.wikipedia.org/wiki/Wolfenstein_3D
+
     - Wolfenstein 3D: vide renderização ray casting gif;
+
     - Para rodar corretamente é necessário ajustar manualmente o tamanho da janela e definir 
       os valores de largura e altura nas propriedades do console (prompt);
+
     - Como o computador compartilha recursos com outras aplicações, não é possível saber com que
       frequência a tela será atualizada. Por isso, é necessário utiliza o tempo para computar os 
       frames e ter certeza que tudo será calculado seguindo um padrão;
+
+    - Unicode - https://www.ssec.wisc.edu/~tomw/java/unicode.html
 */
 
 #ifndef UNICODE // https://stackoverflow.com/questions/13977388/error-cannot-convert-const-wchar-t-13-to-lpcstr-aka-const-char-in-assi
@@ -94,6 +102,16 @@ int main()
         {
             playerA += (0.1) * fElapsedTime;
         }
+        if(GetAsyncKeyState((unsigned short)'W') & 0x8000)
+        {
+            playerX += sinf(playerA) * 5.0 * fElapsedTime;
+            playerY += cosf(playerA) * 5.0 * fElapsedTime;
+        }
+        if(GetAsyncKeyState((unsigned short)'S') & 0x8000)
+        {
+            playerX -= sinf(playerA) * 5.0 * fElapsedTime;
+            playerY -= cosf(playerA) * 5.0 * fElapsedTime;
+        }
 
         // --------------------------------------------------------------------------------------------
         for (int x = 0; x < screenWidth; x++)
@@ -134,6 +152,29 @@ int main()
             int ceiling = (float)(screenHeight / 2.0) - screenHeight / ((float)distanceToWall);
             int floor = screenHeight - ceiling;
 
+            short shade = ' ';
+
+            if(distanceToWall <= (depth / 4.0))
+            {
+                shade = 0x2588; // ▓ very close
+            }
+            else if(distanceToWall < (depth / 3.0))
+            {
+                shade = 0x2593; // ▓
+            }
+            else if(distanceToWall < (depth / 2.0))
+            {
+                shade = 0x2592; // ▒
+            }
+            else if(distanceToWall < depth)
+            {
+                shade = 0x2591; // ░
+            }
+            else
+            {
+                shade = ' '; // too far away
+            }
+
             for (int y = 0; y < screenHeight; y++)
             {
                 if(y < ceiling)
@@ -142,7 +183,7 @@ int main()
                 }
                 else if ((y > ceiling) && (y <= floor))
                 {
-                    screen[y * screenWidth + x] = '#'; // wall
+                    screen[y * screenWidth + x] = shade; // wall
                 }
                 else
                 {
