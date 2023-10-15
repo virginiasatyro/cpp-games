@@ -83,7 +83,7 @@ int main()
     auto time1 = std::chrono::system_clock::now();
     auto time2 = std::chrono::system_clock::now();
 
-    // Game loop
+    // Game loop --------------------------------------------------------------------------------------
     while (1)
     {
         // Time ---------------------------------------------------------------------------------------
@@ -106,11 +106,27 @@ int main()
         {
             playerX += sinf(playerA) * 5.0 * fElapsedTime;
             playerY += cosf(playerA) * 5.0 * fElapsedTime;
+
+            // Collision detection
+            if(map[(int)playerY * mapWidth + (int)playerX] == '#')
+            {
+                // if player hits a wall, undo
+                playerX -= sinf(playerA) * 5.0 * fElapsedTime;
+                playerY -= sinf(playerA) * 5.0 * fElapsedTime;
+            }
         }
         if (GetAsyncKeyState((unsigned short)'S') & 0x8000)
         {
             playerX -= sinf(playerA) * 5.0 * fElapsedTime;
             playerY -= cosf(playerA) * 5.0 * fElapsedTime;
+            
+            // Collision detection
+            if(map[(int)playerY * mapWidth + (int)playerX] == '#')
+            {
+                // if player hits a wall, undo
+                playerX += sinf(playerA) * 5.0 * fElapsedTime;
+                playerY += sinf(playerA) * 5.0 * fElapsedTime;
+            }
         }
 
         // --------------------------------------------------------------------------------------------
