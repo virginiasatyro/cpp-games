@@ -10,7 +10,10 @@
     - Based on https://pt.wikipedia.org/wiki/Wolfenstein_3D
     - Wolfenstein 3D: vide renderização ray casting gif;
     - Para rodar corretamente é necessário ajustar manualmente o tamanho da janela e definir 
-      os valores de largura e altura nas propriedades do Promtp;
+      os valores de largura e altura nas propriedades do console (prompt);
+    - Como o computador compartilha recursos com outras aplicações, não é possível saber com que
+      frequência a tela será atualizada. Por isso, é necessário utiliza o tempo para computar os 
+      frames e ter certeza que tudo será calculado seguindo um padrão;
 */
 
 #ifndef UNICODE // https://stackoverflow.com/questions/13977388/error-cannot-convert-const-wchar-t-13-to-lpcstr-aka-const-char-in-assi
@@ -21,6 +24,7 @@
 #include <iostream>
 #include <windows.h>
 #include <math.h>
+#include <chrono>
 
 #ifdef UNICODE_WAS_UNDEFINED
 #undef UNICODE
@@ -68,9 +72,30 @@ int main()
     map += L"#..............#";
     map += L"################";
 
+    auto time1 = std::chrono::system_clock::now();
+    auto time2 = std::chrono::system_clock::now();
+
     // Game loop
     while (1)
     {
+        // Time ---------------------------------------------------------------------------------------
+        time2 = std::chrono::system_clock::now();
+        std::chrono::duration<float> elapsedTime = time2 - time1;
+        time1 = time2;
+        float fElapsedTime = elapsedTime.count();
+
+        // Controls 
+        // Hanle CCW Rotation -------------------------------------------------------------------------
+        if(GetAsyncKeyState((unsigned short)'A') & 0x8000)
+        {
+            playerA -= (0.1) * fElapsedTime;
+        }
+        if(GetAsyncKeyState((unsigned short)'D') & 0x8000)
+        {
+            playerA += (0.1) * fElapsedTime;
+        }
+
+        // --------------------------------------------------------------------------------------------
         for (int x = 0; x < screenWidth; x++)
         {
             // for each colunm, calculate the projected ray angle into world space
