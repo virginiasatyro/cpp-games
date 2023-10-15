@@ -113,6 +113,7 @@ int main()
             playerY += cosf(playerA) * 5.0 * fElapsedTime;
 
             // Collision detection
+            // TODO: need to check if this logic is ok!
             if(map[(int)playerY * mapWidth + (int)playerX] == '#')
             {
                 // if player hits a wall, undo
@@ -168,31 +169,29 @@ int main()
                         hitWall = true;
                         std::vector<std::pair<float, float>> p;
 
-                        for(int tx = 0; tx < 2; tx++)
+                        for (int tx = 0; tx < 2; tx++)
                         {
-                            for(int ty = 0; ty < 2; ty++)
+                            for (int ty = 0; ty < 2; ty++)
                             {
                                 float vx = (float)testX + tx - playerX;
                                 float vy = (float)testY + ty - playerY;
-                                float d = sqrt(vx*vx + vy*vy); // how far away corner is from player
+                                float d = sqrt(vx * vx + vy * vy); // how far away corner is from player
                                 float dot = (eyeX * vx / d) + (eyeY * vy / d);
                                 p.push_back(std::make_pair(d, dot));
                             }
                         }
 
                         // Sort pairs from closest to farthest - lambda function
-                        sort(p.begin(), p.end(), [](const std::pair<float, float> &left, const std::pair<float, float> &right) 
-                        {
-                            return left.first < right.first;
-                        });
+                        sort(p.begin(), p.end(), [](const std::pair<float, float> &left, const std::pair<float, float> &right)
+                             { return left.first < right.first; });
 
                         float bound = 0.01;
                         // need to study the math/logic more
-                        if(acos(p.at(0).second) < bound)
+                        if (acos(p.at(0).second) < bound)
                         {
                             boundary = true;
                         }
-                        if(acos(p.at(1).second) < bound)
+                        if (acos(p.at(1).second) < bound)
                         {
                             boundary = true;
                         }
@@ -256,6 +255,22 @@ int main()
                 }
             }
         }
+
+        // Display stats
+        swprintf_s(screen, 40, L"X=%3.2f, Y=%3.2f, A=%3.2f FPS=%3.2f ", playerX, playerY, playerA, 1.0 / fElapsedTime);
+
+        // Display map
+        for(int nx = 0; nx < mapWidth; nx++)
+        {
+            for (int ny = 0; ny < mapWidth; ny++)
+            {
+               screen[(ny + 1) * screenWidth + nx] = map[ny * mapWidth + nx];
+            }
+        }
+
+        // Display player
+        // careful! no collision detection 
+        screen[((int)playerY + 1) * screenWidth + (int)playerX] = 'P';
 
         screen[screenWidth * screenHeight - 1] = '\0';
         WriteConsoleOutputCharacter(console, screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
