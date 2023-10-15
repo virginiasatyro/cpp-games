@@ -68,15 +68,15 @@ int main()
     map += L"#..............#";
     map += L"#..............#";
     map += L"#..............#";
+    map += L"#..........#...#";
+    map += L"#..........#...#";
     map += L"#..............#";
     map += L"#..............#";
     map += L"#..............#";
     map += L"#..............#";
     map += L"#..............#";
     map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
+    map += L"#.......########";
     map += L"#..............#";
     map += L"################";
 
@@ -92,22 +92,22 @@ int main()
         time1 = time2;
         float fElapsedTime = elapsedTime.count();
 
-        // Controls 
+        // Controls
         // Hanle CCW Rotation -------------------------------------------------------------------------
-        if(GetAsyncKeyState((unsigned short)'A') & 0x8000)
+        if (GetAsyncKeyState((unsigned short)'A') & 0x8000)
         {
-            playerA -= (0.1) * fElapsedTime;
+            playerA -= (0.8) * fElapsedTime;
         }
-        if(GetAsyncKeyState((unsigned short)'D') & 0x8000)
+        if (GetAsyncKeyState((unsigned short)'D') & 0x8000)
         {
-            playerA += (0.1) * fElapsedTime;
+            playerA += (0.8) * fElapsedTime;
         }
-        if(GetAsyncKeyState((unsigned short)'W') & 0x8000)
+        if (GetAsyncKeyState((unsigned short)'W') & 0x8000)
         {
             playerX += sinf(playerA) * 5.0 * fElapsedTime;
             playerY += cosf(playerA) * 5.0 * fElapsedTime;
         }
-        if(GetAsyncKeyState((unsigned short)'S') & 0x8000)
+        if (GetAsyncKeyState((unsigned short)'S') & 0x8000)
         {
             playerX -= sinf(playerA) * 5.0 * fElapsedTime;
             playerY -= cosf(playerA) * 5.0 * fElapsedTime;
@@ -141,7 +141,7 @@ int main()
                 else
                 {
                     // ray is inbounds so test to see if the ray is a wall block
-                    if(map[testY * mapWidth + testX] == '#')
+                    if (map[testY * mapWidth + testX] == '#')
                     {
                         hitWall = true;
                     }
@@ -152,42 +152,50 @@ int main()
             int ceiling = (float)(screenHeight / 2.0) - screenHeight / ((float)distanceToWall);
             int floor = screenHeight - ceiling;
 
-            short shade = ' ';
+            short wallShade = ' ';
 
-            if(distanceToWall <= (depth / 4.0))
+            if (distanceToWall <= (depth / 4.0))
             {
-                shade = 0x2588; // ▓ very close
+                wallShade = 0x2588; // ▓ very close
             }
-            else if(distanceToWall < (depth / 3.0))
+            else if (distanceToWall < (depth / 3.0))
             {
-                shade = 0x2593; // ▓
+                wallShade = 0x2593; // ▓
             }
-            else if(distanceToWall < (depth / 2.0))
+            else if (distanceToWall < (depth / 2.0))
             {
-                shade = 0x2592; // ▒
+                wallShade = 0x2592; // ▒
             }
-            else if(distanceToWall < depth)
+            else if (distanceToWall < depth)
             {
-                shade = 0x2591; // ░
+                wallShade = 0x2591; // ░
             }
             else
             {
-                shade = ' '; // too far away
+                wallShade = ' '; // too far away
             }
 
             for (int y = 0; y < screenHeight; y++)
             {
-                if(y < ceiling)
+                if (y < ceiling)
                 {
                     screen[y * screenWidth + x] = ' '; // ceiling
                 }
                 else if ((y > ceiling) && (y <= floor))
                 {
-                    screen[y * screenWidth + x] = shade; // wall
+                    screen[y * screenWidth + x] = wallShade; // wall
                 }
                 else
                 {
-                    screen[y * screenWidth + x] = ' '; // floor
+                    // shade floor based on distance
+                    float b = 1.0 - (((float)y - screenHeight / 2.0) / ((float)screenHeight / 2.0));
+                    short floorShade = ' ';
+                    if(b < 0.25)      floorShade = '#';
+                    else if(b < 0.5)  floorShade = 'x';
+                    else if(b < 0.75) floorShade = '.';
+                    else if (b < 0.9) floorShade = '-';
+                    else              floorShade = ' ';
+                    screen[y * screenWidth + x] = floorShade; // floor
                 }
             }
         }
