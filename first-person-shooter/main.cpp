@@ -22,6 +22,9 @@
       frames e ter certeza que tudo será calculado seguindo um padrão;
 
     - Unicode - https://www.ssec.wisc.edu/~tomw/java/unicode.html
+
+    - Várias lógicas matemática ainda precisa ser mais estudadas para melhor entender parted do
+      algoritmo. Pincipalmente em relação aos ângulos.
 */
 
 #ifndef UNICODE // https://stackoverflow.com/questions/13977388/error-cannot-convert-const-wchar-t-13-to-lpcstr-aka-const-char-in-assi
@@ -33,6 +36,8 @@
 #include <windows.h>
 #include <math.h>
 #include <chrono>
+#include <vector>
+#include <algorithm>
 
 #ifdef UNICODE_WAS_UNDEFINED
 #undef UNICODE
@@ -137,6 +142,7 @@ int main()
 
             float distanceToWall = 0;
             bool hitWall = false;
+            bool boundary = false;
 
             float eyeX = sinf(rayAngle); // unit vector for ray in player space
             float eyeY = cosf(rayAngle);
@@ -160,6 +166,36 @@ int main()
                     if (map[testY * mapWidth + testX] == '#')
                     {
                         hitWall = true;
+                        std::vector<std::pair<float, float>> p;
+
+                        for(int tx = 0; tx < 2; tx++)
+                        {
+                            for(int ty = 0; ty < 2; ty++)
+                            {
+                                float vx = (float)testX + tx - playerX;
+                                float vy = (float)testY + ty - playerY;
+                                float d = sqrt(vx*vx + vy*vy); // how far away corner is from player
+                                float dot = (eyeX * vx / d) + (eyeY * vy / d);
+                                p.push_back(std::make_pair(d, dot));
+                            }
+                        }
+
+                        // Sort pairs from closest to farthest - lambda function
+                        sort(p.begin(), p.end(), [](const std::pair<float, float> &left, const std::pair<float, float> &right) 
+                        {
+                            return left.first < right.first;
+                        });
+
+                        float bound = 0.01;
+                        // need to study the math/logic more
+                        if(acos(p.at(0).second) < bound)
+                        {
+                            boundary = true;
+                        }
+                        if(acos(p.at(1).second) < bound)
+                        {
+                            boundary = true;
+                        }
                     }
                 }
             }
@@ -189,6 +225,11 @@ int main()
             else
             {
                 wallShade = ' '; // too far away
+            }
+
+            if(boundary)
+            {
+                wallShade = ' ';
             }
 
             for (int y = 0; y < screenHeight; y++)
