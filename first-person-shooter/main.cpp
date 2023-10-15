@@ -264,13 +264,13 @@ int main()
         {
             for (int ny = 0; ny < mapWidth; ny++)
             {
-               screen[(ny + 1) * screenWidth + nx] = map[ny * mapWidth + nx];
+               screen[(ny + 1) * screenWidth + nx] = map[ny * mapWidth + (mapWidth - nx - 1)];
             }
         }
 
         // Display player
         // careful! no collision detection 
-        screen[((int)playerY + 1) * screenWidth + (int)playerX] = 'P';
+        screen[((int)playerY + 1) * screenWidth + (int)(mapWidth - playerX)] = 'P';
 
         screen[screenWidth * screenHeight - 1] = '\0';
         WriteConsoleOutputCharacter(console, screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
