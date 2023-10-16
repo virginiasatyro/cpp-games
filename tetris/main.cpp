@@ -1,18 +1,45 @@
+/*
+	TETRIS
+
+	- Based on https://www.youtube.com/watch?v=8OK8_tHeCIA - for learning purposes;
+
+	- Based on: https://github.com/OneLoneCoder/Javidx9/blob/master/SimplyCode/OneLoneCoder_Tetris.cpp
+
+	- Run: g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
+	       g++ -o main.exe main.cpp -static -std=c++17
+
+	- Game timing - since computers aren't the same, we need a way to make sure they are going to work similarly
+
+	- In pomputing top-left is always {0, 0};
+
+*/
+
+#ifndef UNICODE // https://stackoverflow.com/questions/13977388/error-cannot-convert-const-wchar-t-13-to-lpcstr-aka-const-char-in-assi
+#define UNICODE
+#define UNICODE_WAS_UNDEFINED
+#endif
+
 #include <iostream>
 #include <windows.h>
 #include <string>
+#include <thread>
+#include <chrono>
 
-// command prompt   g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
-// g++ -o main.exe main.cpp -static -std=c++17
+#ifdef UNICODE_WAS_UNDEFINED
+#undef UNICODE
+#endif
+
+constexpr int screenWidth = 80;
+constexpr int screenHeight = 30;
+
+constexpr int fieldWidth = 12;
+constexpr int fieldHeight = 18;
+
+constexpr int tetroSize = 4;
 
 std::wstring TETROMINO[7]; // 7 types
-int fieldWidth = 12;
-int fieldHeight = 18;
-int tetroSize = 4;
-unsigned char *field = nullptr; // store elements of the fields
 
-int screenWidth = 80;  // columns
-int screenHeight = 30; // rows
+unsigned char *field = nullptr; // store elements of the fields
 
 /* this means (x and y size is 16 - width 4)
  * locate: i = y * w + x -> at 0 degree rotation
@@ -30,7 +57,7 @@ int Rotate(int x, int y, int rot)
 	switch (rot % 4)
 	{
 	case 0:
-		pi =  y * tetroSize + x; // 0 degrees
+		pi =  y * tetroSize + x;       // 0 degrees
 		break;
 	case 1:
 		pi = 12 + y - (x * tetroSize); // 90 degrees
@@ -39,7 +66,7 @@ int Rotate(int x, int y, int rot)
 		pi = 15 - (y * tetroSize) - x; // 180 degrees
 		break;
 	case 3:
-		pi = 3 - y + (x * tetroSize); // 270 degrees
+		pi = 3 - y + (x * tetroSize);  // 270 degrees
 		break;
 	default:
 		pi = 0;
@@ -132,7 +159,8 @@ int main()
 	TETROMINO[5].append(L".X...X...XX.....");
 	TETROMINO[6].append(L"..X...X..XX.....");
 
-	field = new unsigned char[fieldWidth * fieldHeight]; // create play field
+	// Create play field
+	field = new unsigned char[fieldWidth * fieldHeight];
 	for (int x = 0; x < fieldWidth; x++) // board boundary
 	{
 		for (int y = 0; y < fieldHeight; y++)
@@ -150,13 +178,25 @@ int main()
 	int currentX = fieldWidth / 2;
 	int currentY = 0;
 
+	bool key[4];
+
 	while (!gameOver)
 	{
 		// GAME TIMING ----------------------------------------------------------------------------------------------
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
 		// INPUT ----------------------------------------------------------------------------------------------------
+		
+		for(int k = 0; k < 4; k++)
+		{                                                       // R   L  D Z
+			key[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28Z"[k]))) != 0;
+		}
 
 		// GAME LOGIC -----------------------------------------------------------------------------------------------
+	    
+		currentX += (key[0] && doesPieceFit(currentPiece, currentRotation, currentX + 1, currentY)) ? 1 : 0;
+		currentX -= (key[1] && doesPieceFit(currentPiece, currentRotation, currentX - 1, currentY)) ? 1 : 0;		
+		currentY += (key[2] && doesPieceFit(currentPiece, currentRotation, currentX, currentY + 1)) ? 1 : 0;
 
 		// RENDER OUTPUT --------------------------------------------------------------------------------------------
 
@@ -165,7 +205,7 @@ int main()
 		{
 			for (int y = 0; y < fieldHeight; y++)
 			{
-				screen[(y + 2) * screenWidth + (x + 2)] = L" ABCDEFG=#"[field[y * fieldWidth+ x]];
+				screen[(y + 2) * screenWidth + (x + 2)] = L" ABCDEFG=#"[field[y * fieldWidth + x]];
 			}
 		}
 
@@ -176,6 +216,7 @@ int main()
 			{
 				if (TETROMINO[currentPiece][Rotate(x, y, currentRotation)] != L'.')
 				{
+					// + 65 -> it mean some value on ASCII tale - A, B, C,..
 					screen[(currentY + y + 2) * screenWidth + (currentX + x + 2)] = currentPiece + 65;
 				}
 			}
@@ -183,7 +224,7 @@ int main()
 
 		// display frame - function that permits use of prompt as screen buffer effectively
 		// std::cout << "WriteConsoleOutputCharacter";
-		WriteConsoleOutputCharacter(console, /*(LPCSTR)*/(char*)screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
+		WriteConsoleOutputCharacter(console, screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
 	}
 	CloseHandle(console);
 	std::cout << "Game Over";
