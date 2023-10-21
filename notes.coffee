@@ -78,3 +78,7 @@ DATA: 15/10/2023
 
     - Várias lógicas matemática ainda precisa ser mais estudadas para melhor entender parted do
       algoritmo. Pincipalmente em relação aos ângulos.
+
+TODO:
+    - melhorar lógica do pequeno mapa (bug)
+    - entender a lógica matemática

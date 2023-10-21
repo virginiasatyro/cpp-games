@@ -1,7 +1,8 @@
 /*
     First Person Shooter
 
-    - Based on https://www.youtube.com/watch?v=xW8skO7MFYw - for learning purposes;
+    - Based on https://www.youtube.com/watch?v=xW8skO7MFYw and https://github.com/OneLoneCoder/CommandLineFPS 
+    for learning purposes;
 
     - Compiling: g++ -o main.exe main.cpp
 
