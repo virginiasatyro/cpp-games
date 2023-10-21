@@ -10,7 +10,9 @@
 
 	- Game timing - since computers aren't the same, we need a way to make sure they are going to work similarly
 
-	- In pomputing top-left is always {0, 0};
+	- In computing top-left is always {0, 0};
+
+	- Tips to run: https://www.youtube.com/watch?v=jnI1gMxtrB4
 
 */
 
@@ -24,6 +26,7 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #ifdef UNICODE_WAS_UNDEFINED
 #undef UNICODE
@@ -113,6 +116,211 @@ int main()
 	SetConsoleActiveScreenBuffer(console);
 	DWORD bytesWritten = 0;
 
+	TETROMINO[0].append(L"..X...X...X...X."); // Tetronimos 4x4
+	TETROMINO[1].append(L"..X..XX...X.....");
+	TETROMINO[2].append(L".....XX..XX.....");
+	TETROMINO[3].append(L"..X..XX..X......");
+	TETROMINO[4].append(L".X...XX...X.....");
+	TETROMINO[5].append(L".X...X...XX.....");
+	TETROMINO[6].append(L"..X...X..XX.....");
+
+	// Create play field
+	field = new unsigned char[fieldWidth * fieldHeight];
+	for (int x = 0; x < fieldWidth; x++) // board boundary
+	{
+		for (int y = 0; y < fieldHeight; y++)
+		{
+			// make everything 0, unless the boards
+			// 9 represents the border
+			field[y * fieldWidth + x] = ((x == 0) || x == (fieldWidth - 1) || y == (fieldHeight - 1)) ? 9 : 0;
+		}
+	}
+
+	bool gameOver = false;
+
+	int currentPiece = 0;
+	int currentRotation = 0;
+	int currentX = fieldWidth / 2;
+	int currentY = 0;
+
+	bool key[4];
+	bool rotateHold = true;
+
+	int speed = 5; // defualt = 20
+	int speedCounter = 0;
+	bool forceDown = false;
+
+	int pieceCount = 0;
+	int score = 0;
+
+	std::vector<int> lines;
+
+	while (!gameOver)
+	{
+		// GAME TIMING ----------------------------------------------------------------------------------------------
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		speedCounter++;
+		forceDown = (speedCounter == speed);
+
+		// INPUT ----------------------------------------------------------------------------------------------------
+		
+		for(int k = 0; k < 4; k++)
+		{                                                       // R   L  D Z
+			key[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28Z"[k]))) != 0;
+		}
+
+		// GAME LOGIC -----------------------------------------------------------------------------------------------
+	    
+		currentX += (key[0] && doesPieceFit(currentPiece, currentRotation, currentX + 1, currentY)) ? 1 : 0;
+		currentX -= (key[1] && doesPieceFit(currentPiece, currentRotation, currentX - 1, currentY)) ? 1 : 0;
+		currentY += (key[2] && doesPieceFit(currentPiece, currentRotation, currentX, currentY + 1)) ? 1 : 0;
+
+		// Rotate, but latch to stop wild spinning
+		if (key[3])
+		{
+			currentRotation += (rotateHold && doesPieceFit(currentPiece, currentRotation + 1, currentX, currentY)) ? 1 : 0;
+			rotateHold = false;
+		}
+		else
+		{
+			rotateHold = true;
+		}
+
+		if (forceDown)
+		{
+			speedCounter = 0;
+			pieceCount++;
+
+			// Decrease speed - game gets faster
+			if (pieceCount % 10 == 0)
+			{
+				if (speed >= 10)
+				{
+					speed--;
+				}
+			}
+
+			if (doesPieceFit(currentPiece, currentRotation, currentX, currentY + 1))
+			{
+				currentY++;
+			}
+			else
+			{
+				// Lock the current piece in the field
+				for (int x = 0; x < 4; x++)
+				{
+					for (int y = 0; y < 4; y++)
+					{
+						if (TETROMINO[currentPiece][Rotate(x, y, currentRotation)] != L'.')
+						{
+							field[(currentY + y) * fieldWidth + (currentX + x)] = currentPiece + 1;
+						}
+					}
+				}
+
+				// Check horizontal lines
+				for (int y = 0; y < 4; y++)
+				{
+					if (currentY + y < fieldHeight - 1)
+					{
+						bool line = true;
+						for(int x = 1; x < fieldWidth - 1; x++)
+						{
+							line &= (field[(currentY + y) * fieldWidth + x]) != 0;
+						}
+
+						if(line)
+						{
+							// Remove line - set to =
+							for(int x = 1; x < fieldWidth - 1; x++)
+							{
+								field[(currentY + y) * fieldWidth + x] = 8; // =
+							}
+
+							lines.push_back(currentY + y);
+						}
+					}
+				}
+				
+				// Score calculation
+				score += 25;
+				if(!lines.empty()) 
+				{
+					score += (1 << lines.size()) * 100;
+				}
+
+				// Choose next piece
+				currentX = fieldWidth / 2;
+				currentY = 0;
+				currentRotation = 0;
+				currentPiece = rand() % 7;
+
+				// If piece does not fit
+				gameOver = !doesPieceFit(currentPiece, currentRotation, currentX, currentY);
+			}
+		}
+
+		// RENDER OUTPUT --------------------------------------------------------------------------------------------
+
+		// Draw field
+		for (int x = 0; x < fieldWidth; x++)
+		{
+			for (int y = 0; y < fieldHeight; y++)
+			{
+				screen[(y + 2) * screenWidth + (x + 2)] = L" ABCDEFG=#"[field[y * fieldWidth + x]];
+			}
+		}
+
+		// Draw current piece
+		for (int x = 0; x < 4; x++)
+		{
+			for (int y = 0; y < 4; y++)
+			{
+				if (TETROMINO[currentPiece][Rotate(x, y, currentRotation)] != L'.')
+				{
+					// + 65 -> it mean some value on ASCII tale - A, B, C,..
+					screen[(currentY + y + 2) * screenWidth + (currentX + x + 2)] = currentPiece + 65;
+				}
+			}
+		}
+
+		// Display score
+		swprintf_s(&screen[2 * screenWidth + fieldWidth + 6], 16, L"SCORE: %8d", score);
+
+		if(!lines.empty())
+		{
+			// Display frame
+			WriteConsoleOutputCharacter(console, screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
+			std::this_thread::sleep_for(std::chrono::milliseconds(400)); // not a good practice
+
+			// Remove lines
+			for(auto &v : lines)
+			{
+				for (int x = 1; x < fieldWidth - 1; x++)
+				{
+					for(int y = v; y > 0; y--)
+					{
+						field[y * fieldWidth + x] = field[(y - 1) * fieldWidth + x];
+					}
+					field[x] = 0;
+				}
+			}
+
+			lines.clear();
+		}
+
+		// display frame - function that permits use of prompt as screen buffer effectively
+		// std::cout << "WriteConsoleOutputCharacter";
+		WriteConsoleOutputCharacter(console, screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
+	}
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	CloseHandle(console);
+	std::cout << "Game Over" << std::endl;
+	system("pause");
+	return 0;
+}
+
 	// create assets
 	// single dimension array to represent multiple dimension (x, y)
 	// . - empty space, X - TETROMINO
@@ -150,86 +358,3 @@ int main()
 	TETROMINO[6].append(L".XX.");
 	TETROMINO[6].append(L".X..");
 	TETROMINO[6].append(L".X..");*/
-
-	TETROMINO[0].append(L"..X...X...X...X."); // Tetronimos 4x4
-	TETROMINO[1].append(L"..X..XX...X.....");
-	TETROMINO[2].append(L".....XX..XX.....");
-	TETROMINO[3].append(L"..X..XX..X......");
-	TETROMINO[4].append(L".X...XX...X.....");
-	TETROMINO[5].append(L".X...X...XX.....");
-	TETROMINO[6].append(L"..X...X..XX.....");
-
-	// Create play field
-	field = new unsigned char[fieldWidth * fieldHeight];
-	for (int x = 0; x < fieldWidth; x++) // board boundary
-	{
-		for (int y = 0; y < fieldHeight; y++)
-		{
-			// make everything 0, unless the boards
-			// 9 represents the border
-			field[y * fieldWidth + x] = ((x == 0) || (x == fieldWidth - 1) || (y == fieldHeight - 1)) ? 9 : 0;
-		}
-	}
-
-	bool gameOver = false;
-
-	int currentPiece = 0;
-	int currentRotation = 0;
-	int currentX = fieldWidth / 2;
-	int currentY = 0;
-
-	bool key[4];
-
-	while (!gameOver)
-	{
-		// GAME TIMING ----------------------------------------------------------------------------------------------
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-		// INPUT ----------------------------------------------------------------------------------------------------
-		
-		for(int k = 0; k < 4; k++)
-		{                                                       // R   L  D Z
-			key[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28Z"[k]))) != 0;
-		}
-
-		// GAME LOGIC -----------------------------------------------------------------------------------------------
-	    
-		currentX += (key[0] && doesPieceFit(currentPiece, currentRotation, currentX + 1, currentY)) ? 1 : 0;
-		currentX -= (key[1] && doesPieceFit(currentPiece, currentRotation, currentX - 1, currentY)) ? 1 : 0;		
-		currentY += (key[2] && doesPieceFit(currentPiece, currentRotation, currentX, currentY + 1)) ? 1 : 0;
-
-		// RENDER OUTPUT --------------------------------------------------------------------------------------------
-
-		// Draw field
-		for (int x = 0; x < fieldWidth; x++)
-		{
-			for (int y = 0; y < fieldHeight; y++)
-			{
-				screen[(y + 2) * screenWidth + (x + 2)] = L" ABCDEFG=#"[field[y * fieldWidth + x]];
-			}
-		}
-
-		// Draw current piece
-		for (int x = 0; x < tetroSize; x++)
-		{
-			for (int y = 0; y < tetroSize; y++)
-			{
-				if (TETROMINO[currentPiece][Rotate(x, y, currentRotation)] != L'.')
-				{
-					// + 65 -> it mean some value on ASCII tale - A, B, C,..
-					screen[(currentY + y + 2) * screenWidth + (currentX + x + 2)] = currentPiece + 65;
-				}
-			}
-		}
-
-		// display frame - function that permits use of prompt as screen buffer effectively
-		// std::cout << "WriteConsoleOutputCharacter";
-		WriteConsoleOutputCharacter(console, screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
-	}
-	CloseHandle(console);
-	std::cout << "Game Over";
-	system("pause");
-	return 0;
-}
-
-// https://www.youtube.com/watch?v=jnI1gMxtrB4
