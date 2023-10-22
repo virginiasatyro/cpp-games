@@ -43,19 +43,71 @@ int main()
 	SetConsoleActiveScreenBuffer(console);
 	DWORD bytesWritten = 0;
 
+    // linked list - push in the head - pop in the tail
     std::list<snakeSegment> snake = {{60, 15}, {61, 15}, {62, 15}, {63, 15}, {64, 15}, {65, 15}, {66, 15}, {67, 15}, {68, 15}, {69, 15}};
     int foodX = 20;
     int foodY = 15;
     int score = 0;
     int snakeDirection = 3;
     bool snakeDead = false;
+    bool keyLeft = false;
+    bool keyRight = false;
+    bool keyLeftOld = false;
+    bool keyRightOld = false;
 
     // Game loop
     while(1)
     {
         // Timing - inputs ============================================================================
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        // Get input
+        keyRight = (0x8000 & GetAsyncKeyState((unsigned char)('\x27'))) != 0;
+        keyLeft = (0x8000 & GetAsyncKeyState((unsigned char)('\x25'))) != 0;
+
+        if(keyRight && !keyRightOld)
+        {
+            snakeDirection++;
+            if(snakeDirection == 4)
+            {
+                snakeDirection = 0;
+            }
+        }
+
+        if(keyLeft && !keyLeftOld)
+        {
+            snakeDirection--;
+            if(snakeDirection == -1)
+            {
+                snakeDirection = 3;
+            }
+        }
+
+        keyRightOld = keyRight;
+        keyLeftOld = keyLeft;
 
         // Game logic =================================================================================
+        // Update snake position
+        switch (snakeDirection)
+        {
+        case 0: // up
+            snake.push_front({snake.front().x, snake.front().y - 1});
+            break;
+        case 1: // right
+            snake.push_front({snake.front().x + 1, snake.front().y});
+            break;
+        case 2: // down
+            snake.push_front({snake.front().x, snake.front().y + 1});
+            break;
+        case 3: // left
+            snake.push_front({snake.front().x - 1, snake.front().y});
+            break;
+        default:
+            break;
+        }
+
+        // Chop off snakes tail
+        snake.pop_back();
 
         // Display ====================================================================================
         // Clear screen
@@ -89,7 +141,6 @@ int main()
         WriteConsoleOutputCharacter(console, screen, screenWidth * screenHeight, {0, 0}, &bytesWritten);
     }
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 	CloseHandle(console);
 	std::cout << "Game Over" << std::endl;
 	system("pause");
