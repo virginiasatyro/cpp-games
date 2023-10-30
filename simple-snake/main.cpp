@@ -3,11 +3,19 @@
 
     - Run: g++ -o main.exe main.cpp -static -std=c++17
 
+    - Based on https://www.youtube.com/watch?v=e8lYLYlrGLg - for learning purposes;
+
+    - Thanks to https://github.com/OneLoneCoder/Javidx9/blob/master/SimplyCode/OneLoneCoder_Snake.cpp
+
     - TODO:
-        - enhance the commands to move (put 4 options)
-        - add play/pause/game over functionalities
-        - add options with walls
-        - work on different levels
+        - enhance the commands to move (put 4 options) -> enhancement
+        - add play/pause/game over functionalities -> enhancemente
+        - add options with walls -> enhancement
+        - work on different levels -> enhancement
+        - input logic has a bug (commands are not ok) -> fix it
+        - putting a new fruit in place has a bug -> fix it
+        - time it moves vertically or horizontally is different -> fix it
+        - buttuns (timing is not perfect, still fails) -> fix it
 
 */
 
@@ -29,7 +37,7 @@
 #endif
 
 constexpr int screenWidth  = 120;
-constexpr int screenHeight = 80;
+constexpr int screenHeight = 30;
 
 struct snakeSegment
 {
@@ -53,7 +61,7 @@ int main()
     {
         // linked list - push in the head - pop in the tail
         std::list<snakeSegment> snake = {{60, 15}, {61, 15}, {62, 15}, {63, 15}, {64, 15}, {65, 15}, {66, 15}, {67, 15}, {68, 15}, {69, 15}};
-        int foodX = 20;
+        int foodX = 30;
         int foodY = 15;
         int score = 0;
         int snakeDirection = 3;
@@ -67,29 +75,35 @@ int main()
         while (!snakeDead)
         {
             // Timing - inputs ============================================================================
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             // Get input
-            keyRight = (0x8000 & GetAsyncKeyState((unsigned char)('\x27'))) != 0;
-            keyLeft = (0x8000 & GetAsyncKeyState((unsigned char)('\x25'))) != 0;
+            // TODO: input logic is not perfect
+            //auto time1 = std::chrono::system_clock::now();
+            // needs a larger delay if moving vertically (because of prompt properties) - still needs a fine tunning
+            //while ((std::chrono::system_clock::now() - time1) < ((snakeDirection % 2 == 1) ? std::chrono::milliseconds(40) : std::chrono::milliseconds(60)))
+            //{
+                keyRight = (0x8000 & GetAsyncKeyState((unsigned char)('\x27'))) != 0;
+                keyLeft = (0x8000 & GetAsyncKeyState((unsigned char)('\x25'))) != 0;
 
-            if (keyRight && !keyRightOld)
-            {
-                snakeDirection++;
-                if (snakeDirection == 4)
+                if (keyRight && !keyRightOld)
                 {
-                    snakeDirection = 0;
+                    snakeDirection++;
+                    if (snakeDirection == 4)
+                    {
+                        snakeDirection = 0;
+                    }
                 }
-            }
 
-            if (keyLeft && !keyLeftOld)
-            {
-                snakeDirection--;
-                if (snakeDirection == -1)
+                if (keyLeft && !keyLeftOld)
                 {
-                    snakeDirection = 3;
+                    snakeDirection--;
+                    if (snakeDirection == -1)
+                    {
+                        snakeDirection = 3;
+                    }
                 }
-            }
+            //}
 
             keyRightOld = keyRight;
             keyLeftOld = keyLeft;
@@ -115,16 +129,7 @@ int main()
             }
 
             // Collision Detection
-            // Collision snake x world
-            if (snake.front().x < 0 || snake.front().x >= screenWidth)
-            {
-                snakeDead = true;
-            }
-            if (snake.front().y < 3 || snake.front().y >= screenHeight)
-            {
-                snakeDead = true;
-            }
-
+            
             // Collision snake x food
             if (snake.front().x == foodX && snake.front().y == foodY)
             {
@@ -141,6 +146,16 @@ int main()
                 {
                     snake.push_back({snake.back().x, snake.back().y});
                 }
+            }
+
+            // Collision snake x world
+            if (snake.front().x < 0 || snake.front().x >= screenWidth)
+            {
+                snakeDead = true;
+            }
+            if (snake.front().y < 3 || snake.front().y >= screenHeight)
+            {
+                snakeDead = true;
             }
 
             // Collision snake x snake

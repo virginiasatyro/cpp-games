@@ -18,7 +18,25 @@ não esquecer de inicializar o xlaunch
 ###############################################################################################################
 
 ###############################################################################################################
+SNAKE
 
+DATA: 29/10/2023
+
+    - Run: g++ -o main.exe main.cpp -static -std=c++17
+
+    - Based on https://www.youtube.com/watch?v=e8lYLYlrGLg - for learning purposes;
+
+    - Thanks to https://github.com/OneLoneCoder/Javidx9/blob/master/SimplyCode/OneLoneCoder_Snake.cpp
+
+    - TODO:
+        - enhance the commands to move (put 4 options) -> enhancement
+        - add play/pause/game over functionalities -> enhancemente
+        - add options with walls -> enhancement
+        - work on different levels -> enhancement
+        - input logic has a bug (commands are not ok) -> fix it
+        - putting a new fruit in place has a bug -> fix it
+        - time it moves vertically or horizontally is different -> fix it
+        - buttuns (timing is not perfect, still fails) -> fix it
 ###############################################################################################################
 TETRIS 
 
