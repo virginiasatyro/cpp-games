@@ -25,6 +25,7 @@ public:
 
 private:
     float carPosX = 0; // -1 0 +1
+    float carDistance = 0;
 
 
 protected:
@@ -35,6 +36,13 @@ protected:
 
     bool OnUserUpdate(float fElapsedTime) override
     {
+        // INPUT --------------------------------------------------------------------------
+        if (GetKey(olc::Key::UP).bHeld)
+        {  
+            carDistance += 10 * fElapsedTime;
+        }
+
+        // DRAW - LOGIC -------------------------------------------------------------------
         // Clear screen
         PixelGameEngine::ConsoleClear();
         Clear(olc::BLACK);
@@ -43,8 +51,10 @@ protected:
         {
             for (int x = 0; x < ScreenWidth(); x++)
             {
+                float perspective = (float)y / (ScreenHeight() / 2.0);
+
                 float middlePoint = 0.5;
-                float roadWidth = 0.6;
+                float roadWidth = 0.1 + perspective * 0.8;
                 float clipWidth = roadWidth * 0.15;
 
                 roadWidth *= 0.5;
@@ -56,11 +66,13 @@ protected:
 
                 int row = ScreenHeight() / 2 + y;
 
+                auto grassColour = sinf(20.0 * powf(1.0 - perspective, 3) + carDistance * 0.1f) > 0.0 ? olc::GREEN : olc::DARK_GREEN;
+
                 // Draw upeer half of screen - black
                 // Draw botton half of screen - green - red - grey - red - green
                 if (x >= 0 && x < leftGrass)
                 {
-                    Draw(x, row, olc::GREEN); // grass
+                    Draw(x, row, grassColour); // grass
                 }
                 if (x >= leftGrass && x < leftClip)
                 {
@@ -76,7 +88,7 @@ protected:
                 }
                 if (x >= rightGrass && x < ScreenWidth())
                 {
-                    Draw(x, row, olc::GREEN); // grass
+                    Draw(x, row, grassColour); // grass
                 }
             }
         }
