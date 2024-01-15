@@ -39,6 +39,9 @@ private:
     float timeSinceStart = 0.0;
     int cellSize = 8; // one game unit is 8 character in our screen
 
+    float frogX = 8.0;
+    float frogY = 9.0;
+
     olc::Sprite *sprBus = nullptr;
     olc::Sprite *sprCar1 = nullptr;
     olc::Sprite *sprCar2 = nullptr;
@@ -75,6 +78,22 @@ protected:
         timeSinceStart += fElapsedTime;
 
         // INPUT --------------------------------------------------------------------------
+        if (GetKey(olc::Key::UP).bReleased)
+        {
+            frogY -= 1.0;
+        }
+        if (GetKey(olc::Key::DOWN).bReleased)
+        {
+            frogY += 1.0;
+        }
+        if (GetKey(olc::Key::LEFT).bReleased)
+        {
+            frogX -= 1.0;
+        }
+        if (GetKey(olc::Key::RIGHT).bReleased)
+        {
+            frogX += 1.0;
+        }
 
         // DRAW ---------------------------------------------------------------------------
         // Draw lanes
@@ -94,8 +113,6 @@ protected:
             for (int i = 0; i < (ScreenWidth() / cellSize) + 2; i++)
             {
                 char graphic = lane.second[(startPos + i) % 64];
-                // void Fill(int x1, int y1, int x2, int y2, short c = 0x2588, short col = 0x000F)
-                // Fill((x + i)*cellSize - cellOffset, y*cellSize, (x + i + 1)*cellSize - cellOffset, (y + 1)*cellSize, graphic);
                 switch (graphic)
                 {
                 case 'a':
@@ -149,7 +166,6 @@ protected:
                     break; // Pavement
                 case '.':
                     FillRect((x + i) * cellSize - cellOffset, y * cellSize, cellSize, cellSize, olc::BLACK);
-                    // Fill((x + i) * cellSize - cellOffset, y * cellSize, (x + i + 1) * cellSize - cellOffset, (y + 1) * cellSize, ' ');
                     break; // Road
                 default:
                     break;
@@ -157,6 +173,10 @@ protected:
             }
             y++;
         }
+
+        // Draw frog
+        DrawSprite(frogX * cellSize, frogY * cellSize, sprFrog);
+
         return true;
     }
 };
