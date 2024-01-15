@@ -5,7 +5,12 @@
 
     - for some reason the file.spr is not working, have to use file.png
 
+    - easy and fun game to work on!
+
     - TODO:
+        - add more thing to make it a game
+        - example FROGGER 1981: https://www.youtube.com/shorts/WbP_oXtiwGA?feature=share 
+        - https://www.youtube.com/watch?v=afVR6_gt2RY
  
 */
 
@@ -42,6 +47,8 @@ private:
     float frogX = 8.0;
     float frogY = 9.0;
 
+    bool *bufDanger = nullptr;
+
     olc::Sprite *sprBus = nullptr;
     olc::Sprite *sprCar1 = nullptr;
     olc::Sprite *sprCar2 = nullptr;
@@ -64,6 +71,9 @@ protected:
         sprPavement = new olc::Sprite("sprites/pavement.png");
         sprWall = new olc::Sprite("sprites/wall.png");
         sprWater = new olc::Sprite("sprites/water.png");
+
+        bufDanger = new bool[ScreenWidth() * ScreenHeight()];
+        memset(bufDanger, 0, ScreenWidth() * ScreenHeight() * sizeof(bool));
 
         return true;
     }
@@ -93,6 +103,25 @@ protected:
         if (GetKey(olc::Key::RIGHT).bReleased)
         {
             frogX += 1.0;
+        }
+
+        // Frog is moved by platforms
+        if(frogY <= 3)
+        {
+            frogX -= fElapsedTime * vecLanes[(int)frogY].first;
+        }
+
+        // Collision detection - check four corners of frog against danger buffer
+        bool tl = bufDanger[(int)(frogY * cellSize + 1) * ScreenWidth() + (int)(frogX * cellSize + 1)]; // top left
+        bool tr = bufDanger[(int)(frogY * cellSize + 1) * ScreenWidth() + (int)((frogX + 1) * cellSize - 1)]; // top right
+        bool bl = bufDanger[(int)((frogY + 1) * cellSize - 1) * ScreenWidth() + (int)(frogX * cellSize + 1)]; // bottom left
+        bool br = bufDanger[(int)((frogY + 1) * cellSize - 1) * ScreenWidth() + (int)((frogX + 1) * cellSize - 1)]; // bottom right
+
+        if(tl || tr || bl || br)
+        {
+            // frog has been hit
+            frogX = 8.0;
+            frogY = 9.0;
         }
 
         // DRAW ---------------------------------------------------------------------------
@@ -170,12 +199,27 @@ protected:
                 default:
                     break;
                 }
+
+                // Fill danger buffer
+                for (int j = (x + i) * cellSize - cellOffset; j < (x + i + 1) * cellSize - cellOffset; j++)
+                {
+                    for (int k = y * cellSize; k < (y + 1) * cellSize; k++)
+                    {
+                        // check boundaries
+                        if (j >= 0 && j < ScreenWidth() && k >= 0 && k < ScreenHeight())
+                        {
+                            bufDanger[k * ScreenWidth() + j] = !(graphic == '.' || graphic == 'j' || graphic == 'k' || graphic == 'l' || graphic == 'p' || graphic == 'h');
+                        }
+                    }
+                }
             }
             y++;
         }
 
-        // Draw frog
+        // Draw frog - mask
+        SetPixelMode(olc::Pixel::MASK);
         DrawSprite(frogX * cellSize, frogY * cellSize, sprFrog);
+        SetPixelMode(olc::Pixel::NORMAL);
 
         return true;
     }
