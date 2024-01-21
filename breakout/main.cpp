@@ -39,9 +39,9 @@ protected:
         level += "################";
         level += "#..............#";
         level += "#...11111111...#";
-        level += "#..............#";
-        level += "#..............#";
-        level += "#..............#";
+        level += "#...111..111...#";
+        level += "#...11....11...#";
+        level += "#...11111111...#";
         level += "#..............#";
         level += "#..............#";
         level += "#..............#";
@@ -53,6 +53,7 @@ protected:
         level += "#..............#";
 
         float angle = (rand() / (float)(RAND_MAX)) * 3.14159f * 2.0f;
+        angle = 0.6f;
         ballDX = cosf(angle);
         ballDY = sinf(angle);
 
@@ -68,15 +69,81 @@ protected:
         Clear(olc::BLACK);
 
         int batWidth = 10;
+        float speed = 60.0f;
 
         // INPUT ------------------------------------------------------------------------------------------------------------------
-        if(GetKey(olc::Key::LEFT).bHeld)
+        if (GetKey(olc::Key::LEFT).bHeld)
         {
             bat -= 60 * fElapsedTime;
         }
-        if(GetKey(olc::Key::RIGHT).bHeld)
+        if (GetKey(olc::Key::RIGHT).bHeld)
         {
             bat += 60 * fElapsedTime;
+        }
+
+        // COLLISION DETECTION and PHYSICS----------------------------------------------------------------------------------------------------
+        // so the bat don't go out boundaries
+        if(bat - batWidth < block)
+        {
+            bat = block + batWidth;
+        }
+
+        if(bat + batWidth > (width - 1) * block)
+        {
+            bat = (width - 1) * block - batWidth;
+        }
+        
+        
+        float oldX = ballX;
+        float oldY = ballY;
+
+        ballX += ballDX * fElapsedTime * speed;
+        ballY += ballDY * fElapsedTime * speed;
+
+        int cellOldX = (int)oldX / block;
+        int cellOldY = (int)oldY / block;
+
+        int cellNewX = (int)ballX / block;
+        int cellNewY = (int)ballY / block;
+
+        char newCell = level[cellNewY * width + cellNewX];
+        char oldCell = level[cellOldY * width + cellOldX];
+
+        if(newCell != '.')
+        {
+            // hit and break
+            if(newCell == '1')
+            {
+                level[cellNewY * width + cellNewX] = '.';
+            }
+
+            if(cellNewX != cellOldX)
+            {
+                ballDX *= -1; // invert ball direction
+            }
+            if(cellNewY != cellOldY)
+            {
+                ballDY *= -1;
+            }
+        }
+
+        // check collision with bat
+        if(ballY > height * block - 2)
+        {
+            if (ballX > (bat - batWidth) && (ballX < bat + batWidth))
+            {
+                ballDY *= -1;
+            }
+            else
+            {
+                // dead!
+                ballX = (width / 2.0f) * block;
+                ballY = (height / 2.0f) * block;
+                float angle = (rand() / (float)(RAND_MAX)) * 3.14159f * 2.0f;
+                angle = 0.6f;
+                ballDX = cosf(angle);
+                ballDY = sinf(angle);
+            }
         }
 
         // DRAW -------------------------------------------------------------------------------------------------------------------
@@ -87,17 +154,17 @@ protected:
             {
                 switch (level[y * width + x])
                 {
-                    case '#':
-                        FillRect(x * block, y * block, block, block, olc::WHITE);
-                        break;
-                    case '1':
-                        FillRect(x * block, y * block,  block, block, olc::GREEN);
-                        break;
-                    case '.':
-                        FillRect(x * block, y * block,  block, block, olc::BLACK);
-                        break;
-                    default:
-                        break;
+                case '#': // solid wall
+                    FillRect(x * block, y * block, block, block, olc::WHITE);
+                    break;
+                case '1':
+                    FillRect(x * block, y * block, block, block, olc::GREEN);
+                    break;
+                case '.':
+                    FillRect(x * block, y * block, block, block, olc::BLACK);
+                    break;
+                default:
+                    break;
                 }
             }
         }
