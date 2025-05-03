@@ -1,3 +1,9 @@
+https://www.youtube.com/watch?v=b6A4XHkTjs8&list=PLrOv9FMX8xJE8NgepZR1etrsU63fDDGxO&index=14
+
+https://flappybird.io/
+
+https://github.com/OneLoneCoder/Javidx9/blob/master/ConsoleGameEngine/SmallerProjects/OneLoneCoder_FlappyBird.cpp
+
 FLAPPY BIRD
 
 x, y position
@@ -16,3 +22,7 @@ d2x, d2y acceleration
 - get the section off the screen from the front of the list and move it to the back of the list
 - reset section offset
 - with this - easy to store an infinit world
+
+$ g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17 -DUNICODE
+
+enables unicode

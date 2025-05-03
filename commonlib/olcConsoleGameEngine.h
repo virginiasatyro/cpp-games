@@ -112,6 +112,8 @@ Character Set -> Use Unicode. Thanks! - Javidx9
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+#include <math.h>
+#include <cstring>
 
 enum COLOUR
 {

@@ -1,3 +1,12 @@
+/*
+    ASTEROIDS
+
+    - based on https://www.youtube.com/watch?v=QgDR8LrRZhk - for learning purposes;
+    
+    - run: g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
+
+*/
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -5,8 +14,6 @@
 
 #define OLC_PGE_APPLICATION
 #include "../commonlib/olcPixelGameEngine.h"
-
-// g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
 
 constexpr float piX2 = 6.283185f;
 constexpr float pi = 3.14159f;

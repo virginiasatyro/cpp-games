@@ -33,6 +33,7 @@ private:
     float carSpeed = 0.0;
 
     float curvature = 0.0;
+    float playerCurvature = 0.0;
 
     std::vector<std::pair<float, float>> vecTrack; // curvature, distance
 
@@ -95,6 +96,10 @@ protected:
 
         float trackCurveDiff = (targetCurvature - curvature) * fElapsedTime * carSpeed;
         curvature += trackCurveDiff;
+
+        trackCurvature += (curvature) * fElapsedTime * carSpeed;
+
+        // Fill()??
 
         // DRAW - LOGIC -------------------------------------------------------------------
         // Clear screen

@@ -5,3 +5,6 @@ game play
 https://www.youtube.com/watch?v=_TKiRvGfw3Q
 
 isnt there any sprites for it?
+
+TO DO: 
+- fix the score

@@ -4,10 +4,12 @@
 
 #define OLC_PGE_APPLICATION
 #include "../commonlib/olcPixelGameEngine.h"
+//#include "../commonlib/olcConsoleGameEngine.h"
 
 // g++ -o main.exe main.cpp -luser32 -lgdi32 -lopengl32 -lgdiplus -lShlwapi -ldwmapi -lstdc++fs -static -std=c++17
 
 class FlappyBird : public olc::PixelGameEngine
+//class FlappyBird : public olcConsoleGameEngine
 {
 public:
     FlappyBird()
@@ -24,7 +26,10 @@ private:
 
     float sectionWidth;
     std::list<int> listSection;
-    float levelPosition;
+    float levelPosition = 0.0f;
+
+    bool collisionDetected = false;
+    bool reset = false;
 
 protected:
     // called once at the start, so create things here
@@ -38,67 +43,111 @@ protected:
     // called once per frame
     bool OnUserUpdate(float fElapsedTime) override
     {
-        if (GetKey(olc::Key::SPACE).bPressed && birdVelocity >= gravity / 10.0f)
+        if (reset)
         {
-            birdAcceleration = 0.0f;
-            birdVelocity = - gravity / 4.0f;
+            collisionDetected = false;
+			reset = false;
+			listSection = { 0, 0, 0, 0 };
+			birdAcceleration = 0.0f;
+			birdVelocity = 0.0f;
+			birdPosition = ScreenHeight() / 2.0f;
+        }
+
+        if (collisionDetected)
+        {
+            if (GetKey(olc::Key::SPACE).bReleased)
+            {
+                reset = true;
+            }
         }
         else
         {
-            birdAcceleration += gravity * fElapsedTime;
-        }
-
-        if (birdAcceleration >= gravity) // add some control
-        {
-            birdAcceleration = gravity;
-        }
-
-        birdVelocity += birdAcceleration * fElapsedTime;
-        birdPosition += birdVelocity * fElapsedTime;
-
-        levelPosition += 14.0f * fElapsedTime;
-
-        if(levelPosition > sectionWidth)
-        {
-            levelPosition -= sectionWidth;
-            listSection.pop_front();
-            int i = rand() % (ScreenHeight() - 20);
-            if (i <= 10) i = 0;
-            listSection.push_back(i);
-        }
-
-        Clear(olc::BLACK); // clear screen
-
-        int section = 0;
-        for(auto s : listSection)
-        {
-            if (s != 0)
+            if (GetKey(olc::Key::SPACE).bPressed && birdVelocity >= gravity / 10.0f)
             {
-                // FillRect(int32_t x, int32_t y, int32_t w, int32_t h, Pixel p)
-                // Fill(section * sectionWidth + 10 - levelPosition, ScreenHeight() - s, section * sectionWidth + 15 - levelPosition, ScreenHeight(), PIXEL_SOLID, FG_GREEN);
-                FillRect(section * sectionWidth + 10 - levelPosition, ScreenHeight() - s, section * sectionWidth + 15 - levelPosition, ScreenHeight(), olc::GREEN);
-                //FillRect(section * sectionWidth + 10 - levelPosition, section * sectionWidth + 15 - levelPosition, ScreenHeight() - s, ScreenHeight(), olc::GREEN);
-               // FillRect(ScreenWidth(), section * sectionWidth + 15 - levelPosition, 5, ScreenHeight() - 10, olc::GREEN);
-
-               FillRect(section * sectionWidth + 10 - levelPosition, 0, section * sectionWidth + 15 - levelPosition, ScreenHeight() - s - 15, olc::GREEN);
+                birdAcceleration = 0.0f;
+                birdVelocity = -gravity / 4.0f;
             }
-            section++;
-        }
-        // 
-        int birdX = (int)(ScreenWidth() / 3.0f);
+            else
+            {
+                birdAcceleration += gravity * fElapsedTime;
+            }
 
-        // Draw bird
-        if (birdVelocity > 0) // bird falling
-        {
-            Draw(birdX, birdPosition + 0, olc::YELLOW);
-            //DrawString(birdX, birdPosition + 0, "\\\\\\", olc::WHITE, 1);
-            //DrawString(birdX, birdPosition + 1, "<\\\\\\=Q", olc::WHITE, 1);
-        }
-        else // moving up
-        {
-            Draw(birdX, birdPosition + 0, olc::VERY_DARK_YELLOW);
-            //DrawString(birdX, birdPosition + 0, "<///=Q>", olc::WHITE, 1);
-            //DrawString(birdX, birdPosition + 1, "///", olc::WHITE, 1);
+            if (birdAcceleration >= gravity) // add some control
+            {
+                birdAcceleration = gravity;
+            }
+
+            birdVelocity += birdAcceleration * fElapsedTime;
+            birdPosition += birdVelocity * fElapsedTime;
+
+            levelPosition += 14.0f * fElapsedTime;
+
+            if (levelPosition > sectionWidth)
+            {
+                levelPosition -= sectionWidth;
+                listSection.pop_front();
+                int i = rand() % (ScreenHeight() - 20);
+                if (i <= 10)
+                {
+                    i = 0;
+                }
+                listSection.push_back(i);
+            }
+
+            Clear(olc::VERY_DARK_BLUE); // clear screen
+
+            int section = 0;
+            float x1DnPipe = 0.0f;
+            float y1DnPipe = 0.0f;
+            for (auto s : listSection)
+            {
+                if (s != 0)
+                {
+                    // FillRect(int32_t x, int32_t y, int32_t w, int32_t h, Pixel p)
+                    // Fill(section * sectionWidth + 10 - levelPosition, ScreenHeight() - s, section * sectionWidth + 15 - levelPosition, ScreenHeight(), PIXEL_SOLID, FG_GREEN);
+                    // FillRect(section * sectionWidth + 10 - levelPosition, ScreenHeight() - s, section * sectionWidth + 15 - levelPosition, ScreenHeight(), olc::GREEN); // work a little
+                    // FillRect(section * sectionWidth + 10 - levelPosition, section * sectionWidth + 15 - levelPosition, ScreenHeight() - s, ScreenHeight(), olc::GREEN);
+                    // FillRect(ScreenWidth(), section * sectionWidth + 15 - levelPosition, 5, ScreenHeight() - 10, olc::GREEN);
+                    // DrawLine(Section * fSectionWidth + 10 - fLevelPosition)
+                    DrawLine(section * sectionWidth + 10 - levelPosition, ScreenHeight() - s, section * sectionWidth + 15 - levelPosition, ScreenHeight(), olc::GREEN);
+                    // FillRect(section * sectionWidth + 10 - levelPosition, 0, section * sectionWidth + 15 - levelPosition, ScreenHeight() - s - 15, olc::GREEN);
+
+                    DrawLine(section * sectionWidth + 10 - levelPosition, 0, section * sectionWidth + 15 - levelPosition, ScreenHeight() - s - 15, olc::GREEN);
+
+                    x1DnPipe = section * sectionWidth + 10 - levelPosition;
+                    y1DnPipe = ScreenHeight() - s;
+                    
+                }
+                section++;
+            }
+            //
+            int birdX = (int)(ScreenWidth() / 3.0f);
+
+            if ((x1DnPipe == birdX) && (y1DnPipe == birdPosition))
+            {
+                collisionDetected = true;
+            }
+
+            // Collision Detection
+            /*collisionDetected = fBirdPosition < 2 || fBirdPosition > ScreenHeight() - 2 ||
+                                m_bufScreen[(int)(fBirdPosition + 0) * ScreenWidth() + nBirdX].Char.UnicodeChar != L' ' ||
+                                m_bufScreen[(int)(fBirdPosition + 1) * ScreenWidth() + nBirdX].Char.UnicodeChar != L' ' ||
+                                m_bufScreen[(int)(fBirdPosition + 0) * ScreenWidth() + nBirdX + 6].Char.UnicodeChar != L' ' ||
+                                m_bufScreen[(int)(fBirdPosition + 1) * ScreenWidth() + nBirdX + 6].Char.UnicodeChar != L' ';*/
+
+            // Draw bird
+            if (birdVelocity > 0) // bird falling
+            {
+                Draw(birdX, birdPosition + 0, olc::YELLOW);
+                // DrawString(birdX, birdPosition + 0, "\\\\\\", olc::WHITE, 1);
+                // DrawString(birdX, birdPosition + 1, "<\\\\\\=Q", olc::WHITE, 1);
+            }
+            else // moving up
+            {
+                Draw(birdX, birdPosition + 0, olc::VERY_DARK_YELLOW);
+                // DrawString(birdX, birdPosition + 0, "<///=Q>", olc::WHITE, 1);
+                // DrawString(birdX, birdPosition + 1, "///", olc::WHITE, 1);
+            }
         }
 
         return true;

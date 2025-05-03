@@ -155,6 +155,25 @@ public:
             }
         };
 
+        auto Fire_DeathSpiral = [&](Enemy &enemy, float fElapsedTime, float scrollSpeed, std::list<Bullet> &bullets)
+        {
+            constexpr float delay = 0.2f;
+            constexpr int nBullets = 100;
+            constexpr float fTheta = 3.14159f * 2.0f / (float)nBullets;
+            enemy.dataFire[0] += fElapsedTime;
+
+            if (enemy.dataFire[0] >= delay)
+            {
+                enemy.dataFire[0] -= delay;
+                enemy.dataFire[1] += 0.1f;
+
+                Bullet b;
+                b.pos = enemy.pos + olc::vf2d(24, 24);
+                b.vel = {180.0f * cos(enemy.dataFire[1]), 180.0f * sinf(enemy.dataFire[1])};
+                bullets.push_back(b);
+            }
+        };
+
         listSpaws =
             {
                 {60.0, 0, 3.0f, 0.5f, Move_SinusoidWide, Fire_CirclePulse2},
@@ -163,6 +182,14 @@ public:
                 {360.0, 2, 3.0f, 0.25f, Move_None, Fire_Straight2},
                 {360.0, 2, 3.0f, 0.5f, Move_None, Fire_None},
                 {360.0, 2, 3.0f, 0.75f, Move_None, Fire_Straight2},
+                {500.0, 2, 3.0f, 0.5f, Move_SinusoidNarrow, Fire_DeathSpiral},
+                {550.0, 0, 3.0f, 0.5f, Move_SinusoidWide, Fire_CirclePulse2},
+                {600.0, 1, 3.0f, 0.25f, Move_SinusoidNarrow, Fire_Straight2},
+                {600.0, 1, 3.0f, 0.75f, Move_SinusoidNarrow, Fire_Straight2},
+                {750.0, 2, 3.0f, 0.25f, Move_None, Fire_Straight2},
+                {750.0, 1, 3.0f, 0.5f, Move_Fast, Fire_DeathSpiral},
+                {800.0, 2, 3.0f, 0.75f, Move_None, Fire_Straight2},
+                {800.0, 1, 3.0f, 0.5f, Move_SinusoidNarrow, Fire_DeathSpiral},
             };
 
         return true;

@@ -13,9 +13,30 @@ não esquecer de inicializar o xlaunch
 
 ###############################################################################################################
 
+JOGOS INCRIVEIS 
+REVISTAS ANTIGAS
+http://8bs.com/magazines.htm
+https://www.bbcmicro.co.uk/?atoz=T
+https://bbcmicro.co.uk/jsbeeb/play.php?autoboot&disc=https://bbcmicro.co.uk/gameimg/discs/4036/Disc161-Pacman.ssd&noseek
+https://bbcmicro.co.uk/jsbeeb/play.php?autoboot&disc=https://bbcmicro.co.uk/gameimg/discs/4345/Disc175-Tenebra.ssd&noseek
+
 ###############################################################################################################
 
 ###############################################################################################################
+FROGGER
+
+DATA: 14/01/2024
+
+    - Based on: https://www.youtube.com/watch?v=QJnZ5QmpXOE - for learning purposes;
+
+    - for some reason the file.spr is not working, have to use file.png
+
+    - easy and fun game to work on!
+
+    - TODO:
+        - add more thing to make it a game
+        - example FROGGER 1981: https://www.youtube.com/shorts/WbP_oXtiwGA?feature=share 
+        - https://www.youtube.com/watch?v=afVR6_gt2RY
 
 ###############################################################################################################
 SNAKE
@@ -37,6 +58,7 @@ DATA: 29/10/2023
         - putting a new fruit in place has a bug -> fix it
         - time it moves vertically or horizontally is different -> fix it
         - buttuns (timing is not perfect, still fails) -> fix it
+        
 ###############################################################################################################
 TETRIS 
 
